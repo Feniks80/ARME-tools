@@ -370,8 +370,8 @@ with col_out:
         else:
             st.markdown(f'<div class="success-card">✅ <b>{st.session_state.n_projects} project(s) calculated</b></div>', unsafe_allow_html=True)
 
-            # Result display
-            st.markdown(f'<div class="result-box">{result}</div>', unsafe_allow_html=True)
+            # Result display — st.code gives native horizontal scroll
+            st.code(result, language=None)
 
             # ── Download button ──
             if st.session_state.report_text:
