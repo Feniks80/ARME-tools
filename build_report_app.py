@@ -9,7 +9,7 @@ Run:
     streamlit run build_report_app.py
 
 Requires (requirements.txt):
-    streamlit, pypdf, reportlab, python-bidi
+    streamlit, pypdf, reportlab, python-bidi, pdfplumber
 
 System packages (packages.txt):
     fonts-freefont-ttf, fonts-dejavu-core
@@ -165,101 +165,157 @@ APP_VER    = "2.1 (web)"
 # ── Custom CSS ───────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-    .stApp { background-color: #f5f7fa; }
+    /* ── Force light theme on main content ────────────────────── */
+    .stApp {
+        background-color: #f5f7fa !important;
+        color: #1a1a2e !important;
+    }
+    /* All text elements — dark */
+    .stApp .main h1, .stApp .main h2, .stApp .main h3, .stApp .main h4,
+    .stApp .main p, .stApp .main span, .stApp .main label, .stApp .main div,
+    .stApp .main li, .stApp .main td, .stApp .main th,
+    .stApp .main small {
+        color: #1a1a2e !important;
+    }
+    /* Text inputs */
+    .stApp .main input[type="text"],
+    .stApp .main textarea {
+        color: #1a1a2e !important;
+        background-color: #ffffff !important;
+    }
+    /* Select boxes */
+    .stApp .main [data-testid="stSelectbox"] div[data-baseweb="select"] {
+        color: #1a1a2e !important;
+        background-color: #ffffff !important;
+    }
+    .stApp .main [data-testid="stSelectbox"] * {
+        color: #1a1a2e !important;
+    }
+    /* Checkbox text */
+    .stApp .main [data-testid="stCheckbox"] label {
+        color: #1a1a2e !important;
+    }
+    /* File uploader — force visibility */
+    .stApp .main [data-testid="stFileUploader"],
+    .stApp .main [data-testid="stFileUploader"] * {
+        color: #1a1a2e !important;
+    }
+    .stApp .main [data-testid="stFileUploaderDropzone"] {
+        background: #ffffff !important;
+        border: 2px dashed #bbc4d8 !important;
+    }
+    .stApp .main [data-testid="stFileUploaderDropzone"] * {
+        color: #1a1a2e !important;
+    }
+    /* Uploaded file items */
+    .stApp .main [data-testid="stFileUploaderFile"] {
+        color: #1a1a2e !important;
+        background: #f8f9fb !important;
+    }
+    .stApp .main [data-testid="stFileUploaderFile"] * {
+        color: #1a1a2e !important;
+    }
+    /* "Showing page X of Y" text */
+    .stApp .main [data-testid="stFileUploader"] small,
+    .stApp .main [data-testid="stFileUploader"] [data-testid] {
+        color: #5a6678 !important;
+    }
 
-    /* Sidebar */
-    [data-testid="stSidebar"] { background-color: #1a2a4a; }
+    /* ── Sidebar — dark navy theme ────────────────────────────── */
+    [data-testid="stSidebar"] { background-color: #1a2a4a !important; }
+    [data-testid="stSidebar"],
     [data-testid="stSidebar"] * { color: #e8ecf4 !important; }
     [data-testid="stSidebar"] h1,
     [data-testid="stSidebar"] h2,
     [data-testid="stSidebar"] h3 { color: #ffffff !important; }
 
-    /* Header bar */
+    /* ── Header bar ───────────────────────────────────────────── */
     .app-header {
         background: linear-gradient(135deg, #1a2a4a 0%, #2d4a8a 100%);
         padding: 18px 28px; border-radius: 10px; margin-bottom: 20px;
         display: flex; align-items: center; justify-content: space-between;
     }
     .app-header h1 { color: white !important; font-size: 1.6rem; margin: 0; }
-    .app-header .subtitle { color: #a8b8d8; font-size: 0.85rem; margin-top: 4px; }
+    .app-header .subtitle { color: #a8b8d8 !important; font-size: 0.85rem; margin-top: 4px; }
 
-    /* Buttons */
+    /* ── Buttons — ARME navy ──────────────────────────────────── */
     .stButton > button {
-        background-color: #1a2a4a; color: white; border: none;
-        border-radius: 6px; padding: 10px 28px; font-size: 1rem;
-        font-weight: 600; transition: background-color 0.2s;
+        background-color: #1a2a4a !important; color: white !important;
+        border: none !important; border-radius: 6px; padding: 10px 28px;
+        font-size: 1rem; font-weight: 600; transition: background-color 0.2s;
     }
-    .stButton > button:hover { background-color: #2d4a8a; }
+    .stButton > button:hover { background-color: #2d4a8a !important; }
+    .stButton > button * { color: white !important; }
 
-    /* Download button */
+    /* ── Download button — green ──────────────────────────────── */
     [data-testid="stDownloadButton"] > button {
-        background-color: #1e6b3a; color: white; border: none;
-        border-radius: 6px; width: 100%;
+        background-color: #1e6b3a !important; color: white !important;
+        border: none !important; border-radius: 6px; width: 100%;
     }
-    [data-testid="stDownloadButton"] > button:hover { background-color: #2a8f4e; }
+    [data-testid="stDownloadButton"] > button:hover { background-color: #2a8f4e !important; }
+    [data-testid="stDownloadButton"] > button * { color: white !important; }
 
-    /* Cards */
+    /* ── Cards ─────────────────────────────────────────────────── */
     .info-card {
-        background: #e8f0fe; border-left: 4px solid #1a2a4a;
-        padding: 10px 16px; border-radius: 0 6px 6px 0; margin: 8px 0; font-size: 0.88rem;
+        background: #e8f0fe !important; border-left: 4px solid #1a2a4a;
+        padding: 10px 16px; border-radius: 0 6px 6px 0; margin: 8px 0;
+        font-size: 0.88rem; color: #1a1a2e !important;
     }
+    .info-card * { color: #1a1a2e !important; }
     .error-card {
-        background: #fdecea; border-left: 4px solid #c0392b;
-        padding: 10px 16px; border-radius: 0 6px 6px 0; margin: 8px 0; font-size: 0.88rem;
+        background: #fdecea !important; border-left: 4px solid #c0392b;
+        padding: 10px 16px; border-radius: 0 6px 6px 0; margin: 8px 0;
+        font-size: 0.88rem; color: #1a1a2e !important;
     }
+    .error-card * { color: #1a1a2e !important; }
     .success-card {
-        background: #e6f4ea; border-left: 4px solid #1e6b3a;
-        padding: 10px 16px; border-radius: 0 6px 6px 0; margin: 8px 0; font-size: 0.88rem;
+        background: #e6f4ea !important; border-left: 4px solid #1e6b3a;
+        padding: 10px 16px; border-radius: 0 6px 6px 0; margin: 8px 0;
+        font-size: 0.88rem; color: #1a1a2e !important;
     }
-    .warn-card {
-        background: #fff8e1; border-left: 4px solid #f9a825;
-        padding: 10px 16px; border-radius: 0 6px 6px 0; margin: 8px 0; font-size: 0.88rem;
-    }
+    .success-card * { color: #1a1a2e !important; }
 
-    /* Log box */
+    /* ── Log box — dark terminal ──────────────────────────────── */
     .log-box {
-        background: #0d1117; color: #c9d1d9;
+        background: #0d1117 !important; color: #c9d1d9 !important;
         font-family: 'Courier New', monospace; font-size: 11px;
         padding: 14px; border-radius: 8px; white-space: pre-wrap;
         line-height: 1.5; border: 1px solid #30363d;
         max-height: 400px; overflow-y: auto;
     }
+    .log-box * { color: #c9d1d9 !important; }
 
-    /* File list — DARK TEXT on white background */
+    /* ── File list ─────────────────────────────────────────────── */
     .file-list {
-        background: #ffffff; border: 1px solid #dde3ec;
+        background: #ffffff !important; border: 1px solid #dde3ec;
         border-radius: 8px; padding: 8px 12px;
         font-family: 'Courier New', monospace; font-size: 0.82rem;
         max-height: 300px; overflow-y: auto; line-height: 1.7;
         color: #1a1a2e !important;
     }
+    .file-list * { color: #1a1a2e !important; }
     .file-list .file-item {
         padding: 3px 4px; border-bottom: 1px solid #f0f2f5;
-        color: #1a1a2e !important;
     }
     .file-list .file-item:last-child { border-bottom: none; }
 
-    /* File uploader text fix */
-    [data-testid="stFileUploader"] label,
-    [data-testid="stFileUploader"] span,
-    [data-testid="stFileUploader"] small,
-    [data-testid="stFileUploader"] p {
-        color: #1a1a2e !important;
-    }
-
-    /* Folder hint */
+    /* ── Folder hint ───────────────────────────────────────────── */
     .folder-hint {
-        background: #fff8e1; border-left: 4px solid #f9a825;
+        background: #fff8e1 !important; border-left: 4px solid #f9a825;
         padding: 8px 14px; border-radius: 0 6px 6px 0;
-        margin: 8px 0; font-size: 0.85rem; color: #5d4037;
+        margin: 8px 0; font-size: 0.85rem; color: #5d4037 !important;
     }
+    .folder-hint * { color: #5d4037 !important; }
 
-    /* Footer */
+    /* ── Footer ────────────────────────────────────────────────── */
     .footer {
         margin-top: 40px; padding-top: 16px;
-        border-top: 1px solid #dde3ec; color: #8a96a8;
+        border-top: 1px solid #dde3ec; color: #8a96a8 !important;
         font-size: 0.78rem; text-align: center;
     }
+
+    /* ── Spinner ───────────────────────────────────────────────── */
+    .stSpinner, .stSpinner * { color: #1a1a2e !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -324,6 +380,13 @@ with st.sidebar:
     st.markdown(f"- Font: **{'✅' if engine and engine.FN != 'Helvetica' else '⚠️ Helvetica'}**")
     st.markdown(f"- BiDi: **{'✅ python-bidi' if BIDI_OK else '⚠️ NOT INSTALLED'}**")
     st.markdown(f"- Annotate: **{'✅' if ANNOTATE_OK else '❌'}**")
+    _pdfplumber_ok = False
+    try:
+        import pdfplumber
+        _pdfplumber_ok = True
+    except ImportError:
+        pass
+    st.markdown(f"- pdfplumber: **{'✅' if _pdfplumber_ok else '⚠️ NOT INSTALLED'}**")
 
     st.markdown("---")
     st.caption(f"© {datetime.now().year} {ORG_NAME}")
