@@ -61,13 +61,15 @@ st.markdown("""
         background: #0d1117;
         color: #c9d1d9;
         font-family: 'Courier New', Courier, monospace;
-        font-size: 12px;
+        font-size: 11px;
         padding: 16px;
         border-radius: 8px;
-        overflow-x: auto;
+        overflow-x: scroll;
         white-space: pre;
-        line-height: 1.5;
+        line-height: 1.45;
         border: 1px solid #30363d;
+        min-width: 0;
+        max-width: 100%;
     }
 
     /* Header bar */
