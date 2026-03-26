@@ -207,18 +207,37 @@ st.markdown("""
     .stApp .main [data-testid="stFileUploaderDropzone"] * {
         color: #1a1a2e !important;
     }
-    /* Uploaded file items */
-    .stApp .main [data-testid="stFileUploaderFile"] {
+    /* Uploaded file items — the individual file rows with X buttons */
+    .stApp .main [data-testid="stFileUploaderFile"],
+    .stApp .main [data-testid="stFileUploaderFile"] * {
         color: #1a1a2e !important;
         background: #f8f9fb !important;
     }
-    .stApp .main [data-testid="stFileUploaderFile"] * {
+    /* The entire file list container above/below dropzone */
+    .stApp .main .uploadedFile,
+    .stApp .main .uploadedFile *,
+    .stApp .main [data-testid="stFileUploader"] li,
+    .stApp .main [data-testid="stFileUploader"] li *,
+    .stApp .main [data-testid="stFileUploader"] a,
+    .stApp .main [data-testid="stFileUploader"] span,
+    .stApp .main [data-testid="stFileUploader"] p,
+    .stApp .main [data-testid="stFileUploader"] div {
         color: #1a1a2e !important;
     }
-    /* "Showing page X of Y" text */
+    /* File name links and size text */
+    .stApp .main [data-testid="stFileUploader"] a[href] {
+        color: #2d4a8a !important;
+        text-decoration: underline;
+    }
+    /* "Showing page X of Y" and pagination */
     .stApp .main [data-testid="stFileUploader"] small,
-    .stApp .main [data-testid="stFileUploader"] [data-testid] {
+    .stApp .main [data-testid="stFileUploader"] [class*="pagination"],
+    .stApp .main [data-testid="stFileUploader"] [class*="page"] {
         color: #5a6678 !important;
+    }
+    /* Nuclear option: any element inside the uploader section */
+    section[data-testid="stFileUploader"] * {
+        color: #1a1a2e !important;
     }
 
     /* ── Sidebar — dark navy theme ────────────────────────────── */
