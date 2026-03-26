@@ -66,26 +66,44 @@ st.markdown("""
     }
 
     /* ── Input widgets ────────────────────────────────────────────────────── */
+    /* Labels — AGGRESSIVE: cover all Streamlit label wrappers */
     .stApp .main [data-testid="stWidgetLabel"] label,
     .stApp .main [data-testid="stWidgetLabel"] p,
-    .stApp .main [data-testid="stWidgetLabel"] span {
+    .stApp .main [data-testid="stWidgetLabel"] span,
+    .stApp .main [data-testid="stWidgetLabel"],
+    .stApp .main [data-testid="stWidgetLabel"] div,
+    .stApp .main .stTextInput label,
+    .stApp .main .stSelectbox label,
+    .stApp .main .stNumberInput label,
+    .stApp .main [data-baseweb="input"] label,
+    .stApp label {
         color: #1a1a2e !important;
     }
     .stApp .main [data-testid="stTextInput"] input,
-    .stApp .main [data-testid="stNumberInput"] input {
+    .stApp .main [data-testid="stNumberInput"] input,
+    .stApp .main [data-baseweb="input"] input,
+    .stApp .main input[type="text"],
+    .stApp .main input[type="number"] {
         background-color: #ffffff !important;
         color: #1a1a2e !important;
         border: 1px solid #c4ccd8 !important;
     }
-    .stApp .main [data-testid="stSelectbox"] > div > div {
+    .stApp .main [data-testid="stSelectbox"] > div > div,
+    .stApp .main [data-baseweb="select"] > div {
         background-color: #ffffff !important;
         color: #1a1a2e !important;
         border: 1px solid #c4ccd8 !important;
     }
-    .stApp .main [data-testid="stSelectbox"] span {
+    .stApp .main [data-testid="stSelectbox"] span,
+    .stApp .main [data-baseweb="select"] span {
         color: #1a1a2e !important;
     }
-    .stApp .main [data-testid="stCheckbox"] label span {
+    .stApp .main [data-testid="stCheckbox"] label span,
+    .stApp .main [data-testid="stCheckbox"] label,
+    .stApp .main [data-testid="stCheckbox"] label p,
+    .stApp .main [data-testid="stCheckbox"] span,
+    .stApp .main .stCheckbox label,
+    .stApp .main .stCheckbox span {
         color: #1a1a2e !important;
     }
     .stApp .main input::placeholder {
@@ -116,6 +134,29 @@ st.markdown("""
     }
     .stApp .main [data-testid="stFileUploaderDropzone"] {
         background-color: #f8f9fb !important;
+    }
+    /* Browse files button inside uploader */
+    .stApp .main [data-testid="stFileUploaderDropzone"] button,
+    .stApp .main [data-testid="stFileUploader"] button {
+        background-color: #ffffff !important;
+        color: #1a2a4a !important;
+        border: 1px solid #1a2a4a !important;
+        border-radius: 6px !important;
+    }
+    .stApp .main [data-testid="stFileUploaderDropzone"] button:hover,
+    .stApp .main [data-testid="stFileUploader"] button:hover {
+        background-color: #e8f0fe !important;
+        color: #1a2a4a !important;
+    }
+    /* Uploaded file name + delete button row */
+    .stApp .main [data-testid="stFileUploaderFile"],
+    .stApp .main [data-testid="stFileUploaderFile"] *,
+    .stApp .main .uploadedFile,
+    .stApp .main .uploadedFile * {
+        color: #1a1a2e !important;
+    }
+    .stApp .main [data-testid="stFileUploaderDeleteBtn"] {
+        color: #666 !important;
     }
 
     /* ── Horizontal rules ─────────────────────────────────────────────────── */
@@ -157,6 +198,18 @@ st.markdown("""
         border: 1px solid #30363d;
     }
     .result-box * { color: #c9d1d9 !important; }
+    .result-box pre {
+        color: #c9d1d9 !important;
+        background: transparent !important;
+        font-family: inherit !important;
+        font-size: inherit !important;
+        line-height: inherit !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        white-space: pre !important;
+        overflow: visible !important;
+        border: none !important;
+    }
 
     /* ── Header bar ───────────────────────────────────────────────────────── */
     .app-header {
@@ -470,8 +523,12 @@ with col_out:
         else:
             st.markdown(f'<div class="success-card">✅ <b>{st.session_state.n_projects} project(s) calculated</b></div>', unsafe_allow_html=True)
 
-            # Result display
-            st.markdown(f'<div class="result-box">{result}</div>', unsafe_allow_html=True)
+            # Result display — escape HTML chars so pipes "|" aren't parsed as markdown tables
+            escaped = (result
+                       .replace("&", "&amp;")
+                       .replace("<", "&lt;")
+                       .replace(">", "&gt;"))
+            st.markdown(f'<div class="result-box"><pre>{escaped}</pre></div>', unsafe_allow_html=True)
 
             # ── Download button ──
             if st.session_state.report_text:
