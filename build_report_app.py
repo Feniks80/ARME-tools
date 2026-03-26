@@ -69,125 +69,10 @@ ORG_EMAIL  = "trom@arme.co.il"
 ENGINEER   = "Shimon Donen"
 APP_VER    = "2.1 (web)"
 
-# ── Force light color-scheme at browser level ────────────────────────────────
-st.markdown('<meta name="color-scheme" content="light only">', unsafe_allow_html=True)
-
-# ── Custom CSS (force light theme, override dark-mode defaults) ──────────────
+# ── Custom CSS — only custom elements; base theme from .streamlit/config.toml ─
 st.markdown("""
 <style>
-    /* ═══ NUCLEAR: Override Streamlit's CSS variables at every level ═══════ */
-    :root,
-    [data-testid="stAppViewContainer"],
-    [data-testid="stApp"],
-    .stApp, html, body {
-        --primary-color: #1a2a4a !important;
-        --background-color: #f5f7fa !important;
-        --secondary-background-color: #e8ecf4 !important;
-        --text-color: #1a1a2e !important;
-        --font: "Source Sans Pro", sans-serif !important;
-        color-scheme: light only !important;
-    }
-
-    /* Force light on html/body */
-    html, body {
-        background-color: #f5f7fa !important;
-        color: #1a1a2e !important;
-        color-scheme: light only !important;
-    }
-
-    /* ═══ FORCE LIGHT THEME ═══════════════════════════════════════════════ */
-
-    /* Main background */
-    .stApp {
-        background-color: #f5f7fa !important;
-        color: #1a1a2e !important;
-    }
-
-    /* ── BLANKET: every single element in main area ──────────────────────── */
-    .stApp .main *:not(.app-header *):not(.log-box *):not(.footer *) {
-        color: #1a1a2e !important;
-    }
-
-    /* ── Headings ─────────────────────────────────────────────────────────── */
-    .stApp .main h1, .stApp .main h2, .stApp .main h3,
-    .stApp .main h4, .stApp .main h5, .stApp .main h6 {
-        color: #1a1a2e !important;
-    }
-
-    /* ── Input fields — white bg, dark text ───────────────────────────────── */
-    .stApp .main input,
-    .stApp .main textarea {
-        background-color: #ffffff !important;
-        color: #1a1a2e !important;
-        border: 1px solid #c4ccd8 !important;
-    }
-    .stApp .main input::placeholder,
-    .stApp .main textarea::placeholder {
-        color: #8a96a8 !important;
-        opacity: 1 !important;
-    }
-
-    /* ── Selectbox ─────────────────────────────────────────────────────────── */
-    .stApp .main [data-baseweb="select"] > div,
-    .stApp .main [data-testid="stSelectbox"] > div > div {
-        background-color: #ffffff !important;
-        color: #1a1a2e !important;
-        border: 1px solid #c4ccd8 !important;
-    }
-
-    /* ── Checkbox — fix dark-on-dark ──────────────────────────────────────── */
-    .stApp .main [data-testid="stCheckbox"] *,
-    .stApp .main .stCheckbox * {
-        color: #1a1a2e !important;
-    }
-
-    /* ── File uploader area ───────────────────────────────────────────────── */
-    .stApp .main [data-testid="stFileUploader"] {
-        background-color: #ffffff !important;
-        border: 1px solid #c4ccd8 !important;
-        border-radius: 8px !important;
-    }
-    .stApp .main [data-testid="stFileUploader"] *,
-    .stApp .main [data-testid="stFileUploaderDropzone"] * {
-        color: #1a1a2e !important;
-    }
-    .stApp .main [data-testid="stFileUploaderDropzone"] {
-        background-color: #f8f9fb !important;
-    }
-    .stApp .main [data-testid="stFileUploader"] small {
-        color: #6b7a90 !important;
-    }
-    /* Browse files button */
-    .stApp .main [data-testid="stFileUploaderDropzone"] button,
-    .stApp .main [data-testid="stFileUploader"] button[kind="secondary"],
-    .stApp .main [data-testid="stFileUploader"] button {
-        background-color: #f0f2f5 !important;
-        color: #1a2a4a !important;
-        border: 1px solid #1a2a4a !important;
-    }
-    /* Uploaded file name row */
-    .stApp .main [data-testid="stFileUploaderFile"] *,
-    .stApp .main .uploadedFile *,
-    .stApp .main [data-testid="stFileUploaderFileName"] {
-        color: #1a1a2e !important;
-    }
-    /* X delete button */
-    .stApp .main [data-testid="stFileUploaderDeleteBtn"],
-    .stApp .main [data-testid="stFileUploaderDeleteBtn"] * {
-        color: #666 !important;
-    }
-
-    /* ── Tooltips & captions ──────────────────────────────────────────────── */
-    .stApp .main [data-testid="stTooltipIcon"] { color: #6b7a90 !important; }
-    .stApp .main [data-testid="stCaptionContainer"],
-    .stApp .main [data-testid="stCaptionContainer"] * {
-        color: #6b7a90 !important;
-    }
-
-    /* ── Horizontal rules ─────────────────────────────────────────────────── */
-    .stApp .main hr { border-color: #dde3ec !important; }
-
-    /* ── Sidebar — dark navy theme ────────────────────────────────────────── */
+    /* ── Sidebar — dark navy ──────────────────────────────────────────────── */
     [data-testid="stSidebar"] {
         background-color: #1a2a4a !important;
     }
@@ -203,9 +88,6 @@ st.markdown("""
         color: #f0c040 !important;
         background-color: rgba(255,255,255,0.1) !important;
     }
-    [data-testid="stSidebar"] hr {
-        border-color: rgba(255,255,255,0.15) !important;
-    }
 
     /* ── Header bar ───────────────────────────────────────────────────────── */
     .app-header {
@@ -214,10 +96,9 @@ st.markdown("""
         border-radius: 10px;
         margin-bottom: 20px;
     }
-    .app-header h1 { color: white !important; font-size: 1.6rem; margin: 0; }
-    .app-header .subtitle { color: #a8b8d8 !important; font-size: 0.85rem; margin-top: 4px; }
     .app-header * { color: white !important; }
-    .app-header .subtitle, .app-header .subtitle * { color: #a8b8d8 !important; }
+    .app-header h1 { font-size: 1.6rem; margin: 0; }
+    .app-header .subtitle, .app-header .subtitle * { color: #a8b8d8 !important; font-size: 0.85rem; }
 
     /* ── Buttons ───────────────────────────────────────────────────────────── */
     .stButton > button {
@@ -229,62 +110,53 @@ st.markdown("""
         font-size: 1rem;
         font-weight: 600;
     }
-    .stButton > button:hover {
-        background-color: #2d4a8a !important;
-        color: white !important;
-    }
+    .stButton > button:hover { background-color: #2d4a8a !important; }
     .stButton > button * { color: white !important; }
 
-    /* Download button */
     [data-testid="stDownloadButton"] > button {
         background-color: #1e6b3a !important;
         color: white !important;
         border: none !important;
     }
-    [data-testid="stDownloadButton"] > button:hover {
-        background-color: #2a8f4e !important;
-    }
+    [data-testid="stDownloadButton"] > button:hover { background-color: #2a8f4e !important; }
     [data-testid="stDownloadButton"] > button * { color: white !important; }
 
     /* ── Cards ─────────────────────────────────────────────────────────────── */
     .info-card {
-        background: #e8f0fe !important;
+        background: #dce8fc;
         border-left: 4px solid #1a2a4a;
         padding: 10px 16px;
         border-radius: 0 6px 6px 0;
         margin: 8px 0;
         font-size: 0.88rem;
+        color: #1a1a2e;
     }
-    .info-card, .info-card * { color: #1a1a2e !important; }
-
     .error-card {
-        background: #fdecea !important;
+        background: #fdecea;
         border-left: 4px solid #c0392b;
         padding: 10px 16px;
         border-radius: 0 6px 6px 0;
         margin: 8px 0;
         font-size: 0.88rem;
+        color: #5a1a1a;
     }
-    .error-card, .error-card * { color: #5a1a1a !important; }
-
     .success-card {
-        background: #e6f4ea !important;
+        background: #d4edda;
         border-left: 4px solid #1e6b3a;
         padding: 10px 16px;
         border-radius: 0 6px 6px 0;
         margin: 8px 0;
         font-size: 0.88rem;
+        color: #1a3a1a;
     }
-    .success-card, .success-card * { color: #1a3a1a !important; }
 
     /* ── Log box ───────────────────────────────────────────────────────────── */
     .log-box {
-        background: #0d1117 !important;
+        background: #0d1117;
         font-family: 'Courier New', monospace;
         font-size: 11px;
         padding: 14px;
         border-radius: 8px;
-        overflow-x: auto;
         white-space: pre-wrap;
         line-height: 1.5;
         border: 1px solid #30363d;
@@ -295,7 +167,7 @@ st.markdown("""
 
     /* ── File list ─────────────────────────────────────────────────────────── */
     .file-list {
-        background: #ffffff !important;
+        background: #ffffff;
         border: 1px solid #dde3ec;
         border-radius: 8px;
         padding: 8px 12px;
@@ -304,8 +176,8 @@ st.markdown("""
         max-height: 300px;
         overflow-y: auto;
         line-height: 1.6;
+        color: #1a1a2e;
     }
-    .file-list, .file-list * { color: #1a1a2e !important; }
     .file-list .file-item {
         padding: 2px 0;
         border-bottom: 1px solid #f0f2f5;
@@ -317,27 +189,24 @@ st.markdown("""
         display: flex;
         align-items: center;
         justify-content: center;
-        background: #eef1f7 !important;
+        background: #e4e9f2;
         border-radius: 8px;
         border: 1px dashed #bbc4d8;
+        color: #6b7a90;
         font-size: 0.95rem;
         text-align: center;
         padding: 20px;
     }
-    .empty-state, .empty-state * { color: #6b7a90 !important; }
 
     /* ── Footer ────────────────────────────────────────────────────────────── */
     .footer {
         margin-top: 40px;
         padding-top: 16px;
         border-top: 1px solid #dde3ec;
+        color: #8a96a8;
         font-size: 0.78rem;
         text-align: center;
     }
-    .footer, .footer * { color: #8a96a8 !important; }
-
-    /* ── Spinner ───────────────────────────────────────────────────────────── */
-    .stSpinner > div { color: #1a1a2e !important; }
 </style>
 """, unsafe_allow_html=True)
 
