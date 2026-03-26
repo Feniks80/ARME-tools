@@ -1,0 +1,195 @@
+# ARME Engineers — Build & Distribution Guide
+
+## Organization
+- **Company**: ARME Engineers (ארמה מהנדסים)
+- **Email**: trom@arme.co.il (default), s-ba@arme.co.il (Sela Ben Ari)
+- **Engineer**: Shimon Donen (שמעון דונן)
+
+## Tools included
+| Tool | Version | Description |
+|------|---------|-------------|
+| Build Report GUI | v2.0 | PDF report generator for prestressed slab calculations |
+| PRET Loads Calculator | v2.1 | Slab load calculator for PRET (FEM) |
+
+## Files to distribute
+| File | Purpose |
+|------|---------|
+| `build_report_gui.py` | Build Report — GUI wrapper |
+| `build_report.py` | Build Report — report assembly engine |
+| `annotate_loading.py` | Build Report — Loading page annotation |
+| `pret_loads_gui.py` | PRET Loads — GUI wrapper |
+| `pret_loads.py` | PRET Loads — calculation engine |
+| `config.py` | Organization settings, factories, auto-detect |
+| `logos/` folder | ARME + factory logos |
+
+---
+
+## Option A — Run as Python scripts
+
+### Install dependencies (once):
+```
+pip install pypdf reportlab python-bidi pdfplumber Pillow
+```
+
+> **Note**: `Pillow` is optional — used for ARME logo display in PRET Loads GUI.
+
+### Folder structure:
+```
+📁 ARME_tools\
+    build_report_gui.py
+    build_report.py
+    annotate_loading.py
+    pret_loads_gui.py
+    pret_loads.py
+    config.py
+    logos\
+        Arme.jpg
+        SelaBenAri.png
+        Haifa.jpg
+        Ramet.png
+        Arad.jpg
+        Denia.png
+```
+
+### Run:
+```
+python build_report_gui.py     # Build Report GUI
+python pret_loads_gui.py       # PRET Loads Calculator GUI
+```
+
+---
+
+## Option B — Build standalone .exe (recommended)
+
+### Step 1 — Install PyInstaller
+```
+pip install pyinstaller
+```
+
+### Step 2a — Build Report GUI
+
+**PowerShell** (VS Code default terminal):
+```powershell
+pyinstaller --onefile --windowed `
+    --add-data "build_report.py;." `
+    --add-data "annotate_loading.py;." `
+    --add-data "config.py;." `
+    --add-data "pret_loads.py;." `
+    --add-data "logos;logos" `
+    --name "ARME_BuildReport" `
+    build_report_gui.py
+```
+
+**CMD** (classic command prompt):
+```cmd
+pyinstaller --onefile --windowed ^
+    --add-data "build_report.py;." ^
+    --add-data "annotate_loading.py;." ^
+    --add-data "config.py;." ^
+    --add-data "pret_loads.py;." ^
+    --add-data "logos;logos" ^
+    --name "ARME_BuildReport" ^
+    build_report_gui.py
+```
+
+**One line** (works in both):
+```
+pyinstaller --onefile --windowed --add-data "build_report.py;." --add-data "annotate_loading.py;." --add-data "config.py;." --add-data "pret_loads.py;." --add-data "logos;logos" --name "ARME_BuildReport" build_report_gui.py
+```
+
+### Step 2b — PRET Loads Calculator GUI
+
+**PowerShell**:
+```powershell
+pyinstaller --onefile --windowed `
+    --add-data "pret_loads.py;." `
+    --add-data "logos;logos" `
+    --name "ARME_PretLoads" `
+    pret_loads_gui.py
+```
+
+**CMD**:
+```cmd
+pyinstaller --onefile --windowed ^
+    --add-data "pret_loads.py;." ^
+    --add-data "logos;logos" ^
+    --name "ARME_PretLoads" ^
+    pret_loads_gui.py
+```
+
+**One line**:
+```
+pyinstaller --onefile --windowed --add-data "pret_loads.py;." --add-data "logos;logos" --name "ARME_PretLoads" pret_loads_gui.py
+```
+
+### Step 3 — Distribute
+Copy `.exe` files from `dist\` folder to colleagues. No Python needed.
+
+---
+
+## Factories & auto-detect
+
+| Factory | Key | Number range | Email |
+|---------|-----|-------------|-------|
+| סלע בן ארי (Sela Ben Ari) | `sela` | 1000–1999 | s-ba@arme.co.il |
+| רמת טרום (Ramet Trom) | `ramet` | 2200–2999 | trom@arme.co.il |
+| שיכון ובינוי סולל בונה (Haifa) | `haifa` | YY-NN (25-01, 26-10) | trom@arme.co.il |
+| ערד הארץ (Arad Haaretz) | `arad` | YYYY-NN (2025-17) | trom@arme.co.il |
+| סיבוס רימון (Denia Sibus) | `denia` | 6900+ | trom@arme.co.il |
+
+## Smart folder detection
+
+The GUI detects project info from folder paths automatically:
+```
+J:\10296 - RAMET\2278 - קרית ביאליק\DESIGN       → project 2278 (ramet)
+M:\_PLATOT SELA-BEN ARI\1380 - מפעל טרמודן\design → project 1380 (sela)
+J:\10299 - HAIFA\26-09 - קיסריה\design\+24         → project 26-09 (haifa), floor +24
+```
+
+## Filename format
+
+Standard: `nn-h-L+STxx (DL+LL).pdf`
+With notes: `02-A50-1700 +1t.m L=5m (0+500).pdf` — extra text between params and (DL+LL) is ignored.
+
+## Embedded metadata
+
+All generated files include ARME Engineers organization info:
+
+### Python modules (docstrings)
+Every `.py` file contains in its docstring:
+```
+Organization: ARME Engineers (ארמה מהנדסים)
+Email: trom@arme.co.il
+Engineer: Shimon Donen (שמעון דונן)
+```
+
+### PDF reports (Build Report)
+PDF document properties (`/Info` dictionary):
+- `/Title` : Project number - name - floor
+- `/Author` : ARME ENGINEERS / engineer name
+- `/Subject` : Factory name
+- `/Creator` : build_report.py — ARME ENGINEERS (factory email)
+- `/Producer` : ARME ENGINEERS Build Report Generator v2.0
+
+### TXT reports (PRET Loads)
+- Header: `ARME ENGINEERS | trom@arme.co.il | PRET Loads Calculator v2.1`
+- Footer: `Generated by: ARME ENGINEERS — PRET Loads Calculator v2.1`
+
+---
+
+## Troubleshooting
+
+**PowerShell: "Missing expression after unary operator '--'"**
+→ PowerShell uses `` ` `` (backtick) for line continuation, NOT `^`. Use the PowerShell commands above, or paste the one-line version.
+
+**"build_report.py not found" error in .exe**
+→ Rebuild with `--add-data` flags shown above.
+
+**Logos missing in report / GUI**
+→ Ensure `logos/` folder is included. Check `--add-data "logos;logos"`.
+
+**ARME logo not showing in PRET Loads GUI**
+→ Install Pillow: `pip install Pillow`.
+
+**Antivirus blocks .exe**
+→ Common with PyInstaller. Add exception or use Option A.
