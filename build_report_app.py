@@ -72,6 +72,17 @@ APP_VER    = "2.1 (web)"
 # ── Custom CSS (force light theme, override dark-mode defaults) ──────────────
 st.markdown("""
 <style>
+    /* ═══ NUCLEAR: Override Streamlit's CSS variables (kills dark theme at root) */
+    :root, [data-testid="stAppViewContainer"],
+    .stApp, html, body {
+        --primary-color: #1a2a4a !important;
+        --background-color: #f5f7fa !important;
+        --secondary-background-color: #e8ecf4 !important;
+        --text-color: #1a1a2e !important;
+        --font: "Source Sans Pro", sans-serif !important;
+        color-scheme: light !important;
+    }
+
     /* ═══ FORCE LIGHT THEME ═══════════════════════════════════════════════════
        Override ALL Streamlit dark-mode defaults so text is always readable.
        Every element gets explicit color — no reliance on Streamlit defaults.
