@@ -184,7 +184,7 @@ st.markdown("""
         border-color: rgba(255,255,255,0.15) !important;
     }
 
-    /* ── Monospace output ─────────────────────────────────────────────────── */
+    /* ── Monospace output (st.code override) ─────────────────────────────── */
     .result-box {
         background: #0d1117 !important;
         color: #c9d1d9 !important;
@@ -209,6 +209,26 @@ st.markdown("""
         white-space: pre !important;
         overflow: visible !important;
         border: none !important;
+    }
+    /* st.code block — force dark terminal look */
+    .stApp .main [data-testid="stCode"],
+    .stApp .main [data-testid="stCode"] pre,
+    .stApp .main [data-testid="stCode"] code,
+    .stApp .main .stCodeBlock,
+    .stApp .main .stCodeBlock pre,
+    .stApp .main .stCodeBlock code {
+        background: #0d1117 !important;
+        color: #c9d1d9 !important;
+        font-family: 'Courier New', Courier, monospace !important;
+        font-size: 12px !important;
+        line-height: 1.5 !important;
+        border: 1px solid #30363d !important;
+        border-radius: 8px !important;
+    }
+    .stApp .main [data-testid="stCode"] pre *,
+    .stApp .main .stCodeBlock pre * {
+        color: #c9d1d9 !important;
+        font-size: 12px !important;
     }
 
     /* ── Header bar ───────────────────────────────────────────────────────── */
@@ -523,12 +543,8 @@ with col_out:
         else:
             st.markdown(f'<div class="success-card">✅ <b>{st.session_state.n_projects} project(s) calculated</b></div>', unsafe_allow_html=True)
 
-            # Result display — escape HTML chars so pipes "|" aren't parsed as markdown tables
-            escaped = (result
-                       .replace("&", "&amp;")
-                       .replace("<", "&lt;")
-                       .replace(">", "&gt;"))
-            st.markdown(f'<div class="result-box"><pre>{escaped}</pre></div>', unsafe_allow_html=True)
+            # Result display — st.code renders plain text, no markdown parsing
+            st.code(result, language=None)
 
             # ── Download button ──
             if st.session_state.report_text:
