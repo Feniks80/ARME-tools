@@ -570,11 +570,14 @@ def make_legend_page(calc_names, factory_cfg=None):
 # ═════════════════════════════════════════════════════════════════════════════
 #  НУМЕРАЦИЯ / ССЫЛКИ
 # ═════════════════════════════════════════════════════════════════════════════
-def make_page_numbers(total, skip_first=True, n_title_pages=1):
+def make_page_numbers(total, skip_first=True, n_front_pages=1):
     """
     Генерирует overlay с номерами страниц и ссылкой «← תוכן» на содержание.
     Возвращает (pdf_bytes, toc_back_regions) — регионы для кликабельных ссылок
     на титульную страницу (содержание).
+
+    n_front_pages: количество вступительных страниц (титул + легенда),
+                   на которых НЕ рисуется ссылка «← תוכן».
     """
     buf = io.BytesIO()
     W, H = A4
@@ -590,8 +593,8 @@ def make_page_numbers(total, skip_first=True, n_title_pages=1):
             page_text = f"{i+1} / {total}"
             c.drawCentredString(W/2, 7*mm, page_text)
 
-            # — Ссылка «← תוכן» справа от номера (только для страниц после титула) —
-            if i >= n_title_pages:
+            # — Ссылка «← תוכן» справа от номера (только для страниц расчётов) —
+            if i >= n_front_pages:
                 page_w = c.stringWidth(page_text, FN, 8)
                 link_x = W/2 + page_w/2 + 6  # 6pt отступ от номера
                 link_text = arrow + toc_label
@@ -729,7 +732,7 @@ def build_report(project_folder, floor_folder, factory_key, engineer=None, outpu
     if not no_nums:
         print(f"  ⚙️   Нумерация ({total_pages} стр.)…")
         num_bytes, toc_back_regions = make_page_numbers(
-            total_pages, skip_first=True, n_title_pages=n_title_pages)
+            total_pages, skip_first=True, n_front_pages=n_front_pages)
         num_reader = PdfReader(io.BytesIO(num_bytes))
         for i in range(total_pages):
             writer.pages[i].merge_page(num_reader.pages[i])
