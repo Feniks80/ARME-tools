@@ -69,152 +69,123 @@ ORG_EMAIL  = "trom@arme.co.il"
 ENGINEER   = "Shimon Donen"
 APP_VER    = "2.1 (web)"
 
+# ── Force light color-scheme at browser level ────────────────────────────────
+st.markdown('<meta name="color-scheme" content="light only">', unsafe_allow_html=True)
+
 # ── Custom CSS (force light theme, override dark-mode defaults) ──────────────
 st.markdown("""
 <style>
-    /* ═══ NUCLEAR: Override Streamlit's CSS variables (kills dark theme at root) */
-    :root, [data-testid="stAppViewContainer"],
+    /* ═══ NUCLEAR: Override Streamlit's CSS variables at every level ═══════ */
+    :root,
+    [data-testid="stAppViewContainer"],
+    [data-testid="stApp"],
     .stApp, html, body {
         --primary-color: #1a2a4a !important;
         --background-color: #f5f7fa !important;
         --secondary-background-color: #e8ecf4 !important;
         --text-color: #1a1a2e !important;
         --font: "Source Sans Pro", sans-serif !important;
-        color-scheme: light !important;
+        color-scheme: light only !important;
     }
 
-    /* ═══ FORCE LIGHT THEME ═══════════════════════════════════════════════════
-       Override ALL Streamlit dark-mode defaults so text is always readable.
-       Every element gets explicit color — no reliance on Streamlit defaults.
-    */
+    /* Force light on html/body */
+    html, body {
+        background-color: #f5f7fa !important;
+        color: #1a1a2e !important;
+        color-scheme: light only !important;
+    }
 
-    /* Main background — force light */
+    /* ═══ FORCE LIGHT THEME ═══════════════════════════════════════════════ */
+
+    /* Main background */
     .stApp {
         background-color: #f5f7fa !important;
         color: #1a1a2e !important;
     }
 
-    /* ── Global text color overrides ──────────────────────────────────────── */
-    /* All text in main area must be dark */
-    .stApp .main .block-container,
-    .stApp .main .block-container * {
+    /* ── BLANKET: every single element in main area ──────────────────────── */
+    .stApp .main *:not(.app-header *):not(.log-box *):not(.footer *) {
         color: #1a1a2e !important;
     }
-    /* Headings (###, ##, #) — dark navy */
+
+    /* ── Headings ─────────────────────────────────────────────────────────── */
     .stApp .main h1, .stApp .main h2, .stApp .main h3,
     .stApp .main h4, .stApp .main h5, .stApp .main h6 {
         color: #1a1a2e !important;
     }
-    /* Paragraphs and markdown text */
-    .stApp .main p, .stApp .main span, .stApp .main li,
-    .stApp .main label, .stApp .main div {
-        color: #1a1a2e !important;
-    }
 
-    /* ── Input widgets — text_input, selectbox, file_uploader ─────────────── */
-    /* Input labels — AGGRESSIVE: cover all Streamlit label wrappers */
-    .stApp .main [data-testid="stWidgetLabel"] label,
-    .stApp .main [data-testid="stWidgetLabel"] p,
-    .stApp .main [data-testid="stWidgetLabel"] span,
-    .stApp .main [data-testid="stWidgetLabel"],
-    .stApp .main [data-testid="stWidgetLabel"] div,
-    .stApp .main .stTextInput label,
-    .stApp .main .stSelectbox label,
-    .stApp .main .stNumberInput label,
-    .stApp .main [data-baseweb="input"] label,
-    .stApp label {
-        color: #1a1a2e !important;
-    }
-    /* Input fields — white bg, dark text */
-    .stApp .main [data-testid="stTextInput"] input,
-    .stApp .main [data-testid="stNumberInput"] input,
-    .stApp .main [data-baseweb="input"] input,
-    .stApp .main input[type="text"],
-    .stApp .main input[type="number"] {
+    /* ── Input fields — white bg, dark text ───────────────────────────────── */
+    .stApp .main input,
+    .stApp .main textarea {
         background-color: #ffffff !important;
         color: #1a1a2e !important;
         border: 1px solid #c4ccd8 !important;
     }
-    /* Selectbox */
-    .stApp .main [data-testid="stSelectbox"] > div > div,
-    .stApp .main [data-baseweb="select"] > div {
-        background-color: #ffffff !important;
-        color: #1a1a2e !important;
-        border: 1px solid #c4ccd8 !important;
-    }
-    .stApp .main [data-testid="stSelectbox"] span,
-    .stApp .main [data-baseweb="select"] span {
-        color: #1a1a2e !important;
-    }
-    /* Checkbox labels — aggressive */
-    .stApp .main [data-testid="stCheckbox"] label span,
-    .stApp .main [data-testid="stCheckbox"] label,
-    .stApp .main [data-testid="stCheckbox"] label p,
-    .stApp .main [data-testid="stCheckbox"] span,
-    .stApp .main .stCheckbox label,
-    .stApp .main .stCheckbox span {
-        color: #1a1a2e !important;
-    }
-    /* Placeholder text (lighter) */
-    .stApp .main input::placeholder {
+    .stApp .main input::placeholder,
+    .stApp .main textarea::placeholder {
         color: #8a96a8 !important;
         opacity: 1 !important;
     }
-    /* Help tooltip text */
-    .stApp .main [data-testid="stTooltipIcon"] {
-        color: #6b7a90 !important;
-    }
-    /* Captions */
-    .stApp .main .stCaption, .stApp .main [data-testid="stCaptionContainer"] {
-        color: #6b7a90 !important;
-    }
-    .stApp .main [data-testid="stCaptionContainer"] * {
-        color: #6b7a90 !important;
+
+    /* ── Selectbox ─────────────────────────────────────────────────────────── */
+    .stApp .main [data-baseweb="select"] > div,
+    .stApp .main [data-testid="stSelectbox"] > div > div {
+        background-color: #ffffff !important;
+        color: #1a1a2e !important;
+        border: 1px solid #c4ccd8 !important;
     }
 
-    /* ── File uploader ────────────────────────────────────────────────────── */
+    /* ── Checkbox — fix dark-on-dark ──────────────────────────────────────── */
+    .stApp .main [data-testid="stCheckbox"] *,
+    .stApp .main .stCheckbox * {
+        color: #1a1a2e !important;
+    }
+
+    /* ── File uploader area ───────────────────────────────────────────────── */
     .stApp .main [data-testid="stFileUploader"] {
         background-color: #ffffff !important;
         border: 1px solid #c4ccd8 !important;
         border-radius: 8px !important;
     }
-    .stApp .main [data-testid="stFileUploader"] * {
+    .stApp .main [data-testid="stFileUploader"] *,
+    .stApp .main [data-testid="stFileUploaderDropzone"] * {
         color: #1a1a2e !important;
-    }
-    .stApp .main [data-testid="stFileUploader"] small {
-        color: #6b7a90 !important;
     }
     .stApp .main [data-testid="stFileUploaderDropzone"] {
         background-color: #f8f9fb !important;
     }
-    /* Browse files button inside uploader */
+    .stApp .main [data-testid="stFileUploader"] small {
+        color: #6b7a90 !important;
+    }
+    /* Browse files button */
     .stApp .main [data-testid="stFileUploaderDropzone"] button,
+    .stApp .main [data-testid="stFileUploader"] button[kind="secondary"],
     .stApp .main [data-testid="stFileUploader"] button {
-        background-color: #ffffff !important;
+        background-color: #f0f2f5 !important;
         color: #1a2a4a !important;
         border: 1px solid #1a2a4a !important;
-        border-radius: 6px !important;
     }
-    .stApp .main [data-testid="stFileUploaderDropzone"] button:hover,
-    .stApp .main [data-testid="stFileUploader"] button:hover {
-        background-color: #e8f0fe !important;
-        color: #1a2a4a !important;
-    }
-    /* Uploaded file name + delete button row */
-    .stApp .main [data-testid="stFileUploaderFile"],
+    /* Uploaded file name row */
     .stApp .main [data-testid="stFileUploaderFile"] *,
-    .stApp .main .uploadedFile,
-    .stApp .main .uploadedFile * {
+    .stApp .main .uploadedFile *,
+    .stApp .main [data-testid="stFileUploaderFileName"] {
         color: #1a1a2e !important;
     }
-    .stApp .main [data-testid="stFileUploaderDeleteBtn"] {
+    /* X delete button */
+    .stApp .main [data-testid="stFileUploaderDeleteBtn"],
+    .stApp .main [data-testid="stFileUploaderDeleteBtn"] * {
         color: #666 !important;
     }
 
-    /* ── Horizontal rules ─────────────────────────────────────────────────── */
-    .stApp .main hr {
-        border-color: #dde3ec !important;
+    /* ── Tooltips & captions ──────────────────────────────────────────────── */
+    .stApp .main [data-testid="stTooltipIcon"] { color: #6b7a90 !important; }
+    .stApp .main [data-testid="stCaptionContainer"],
+    .stApp .main [data-testid="stCaptionContainer"] * {
+        color: #6b7a90 !important;
     }
+
+    /* ── Horizontal rules ─────────────────────────────────────────────────── */
+    .stApp .main hr { border-color: #dde3ec !important; }
 
     /* ── Sidebar — dark navy theme ────────────────────────────────────────── */
     [data-testid="stSidebar"] {
@@ -242,20 +213,11 @@ st.markdown("""
         padding: 18px 28px;
         border-radius: 10px;
         margin-bottom: 20px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
     }
-    .app-header h1 {
-        color: white !important;
-        font-size: 1.6rem;
-        margin: 0;
-    }
-    .app-header .subtitle {
-        color: #a8b8d8 !important;
-        font-size: 0.85rem;
-        margin-top: 4px;
-    }
+    .app-header h1 { color: white !important; font-size: 1.6rem; margin: 0; }
+    .app-header .subtitle { color: #a8b8d8 !important; font-size: 0.85rem; margin-top: 4px; }
+    .app-header * { color: white !important; }
+    .app-header .subtitle, .app-header .subtitle * { color: #a8b8d8 !important; }
 
     /* ── Buttons ───────────────────────────────────────────────────────────── */
     .stButton > button {
@@ -266,28 +228,25 @@ st.markdown("""
         padding: 10px 28px;
         font-size: 1rem;
         font-weight: 600;
-        cursor: pointer;
-        transition: background-color 0.2s;
     }
     .stButton > button:hover {
         background-color: #2d4a8a !important;
         color: white !important;
     }
+    .stButton > button * { color: white !important; }
 
     /* Download button */
     [data-testid="stDownloadButton"] > button {
         background-color: #1e6b3a !important;
         color: white !important;
         border: none !important;
-        border-radius: 6px;
-        width: 100%;
     }
     [data-testid="stDownloadButton"] > button:hover {
         background-color: #2a8f4e !important;
-        color: white !important;
     }
+    [data-testid="stDownloadButton"] > button * { color: white !important; }
 
-    /* ── Info / error / success cards — explicit text color ────────────────── */
+    /* ── Cards ─────────────────────────────────────────────────────────────── */
     .info-card {
         background: #e8f0fe !important;
         border-left: 4px solid #1a2a4a;
@@ -295,9 +254,8 @@ st.markdown("""
         border-radius: 0 6px 6px 0;
         margin: 8px 0;
         font-size: 0.88rem;
-        color: #1a1a2e !important;
     }
-    .info-card * { color: #1a1a2e !important; }
+    .info-card, .info-card * { color: #1a1a2e !important; }
 
     .error-card {
         background: #fdecea !important;
@@ -306,9 +264,8 @@ st.markdown("""
         border-radius: 0 6px 6px 0;
         margin: 8px 0;
         font-size: 0.88rem;
-        color: #5a1a1a !important;
     }
-    .error-card * { color: #5a1a1a !important; }
+    .error-card, .error-card * { color: #5a1a1a !important; }
 
     .success-card {
         background: #e6f4ea !important;
@@ -317,15 +274,13 @@ st.markdown("""
         border-radius: 0 6px 6px 0;
         margin: 8px 0;
         font-size: 0.88rem;
-        color: #1a3a1a !important;
     }
-    .success-card * { color: #1a3a1a !important; }
+    .success-card, .success-card * { color: #1a3a1a !important; }
 
-    /* ── Monospace log ─────────────────────────────────────────────────────── */
+    /* ── Log box ───────────────────────────────────────────────────────────── */
     .log-box {
         background: #0d1117 !important;
-        color: #c9d1d9 !important;
-        font-family: 'Courier New', Courier, monospace;
+        font-family: 'Courier New', monospace;
         font-size: 11px;
         padding: 14px;
         border-radius: 8px;
@@ -336,7 +291,7 @@ st.markdown("""
         max-height: 400px;
         overflow-y: auto;
     }
-    .log-box * { color: #c9d1d9 !important; }
+    .log-box, .log-box * { color: #c9d1d9 !important; }
 
     /* ── File list ─────────────────────────────────────────────────────────── */
     .file-list {
@@ -344,23 +299,19 @@ st.markdown("""
         border: 1px solid #dde3ec;
         border-radius: 8px;
         padding: 8px 12px;
-        font-family: 'Courier New', Courier, monospace;
+        font-family: 'Courier New', monospace;
         font-size: 0.82rem;
         max-height: 300px;
         overflow-y: auto;
         line-height: 1.6;
-        color: #1a1a2e !important;
     }
-    .file-list * { color: #1a1a2e !important; }
+    .file-list, .file-list * { color: #1a1a2e !important; }
     .file-list .file-item {
         padding: 2px 0;
         border-bottom: 1px solid #f0f2f5;
     }
-    .file-list .file-item:last-child {
-        border-bottom: none;
-    }
 
-    /* ── Empty state placeholder ───────────────────────────────────────────── */
+    /* ── Empty state ───────────────────────────────────────────────────────── */
     .empty-state {
         height: 280px;
         display: flex;
@@ -369,28 +320,24 @@ st.markdown("""
         background: #eef1f7 !important;
         border-radius: 8px;
         border: 1px dashed #bbc4d8;
-        color: #6b7a90 !important;
         font-size: 0.95rem;
         text-align: center;
         padding: 20px;
     }
-    .empty-state * { color: #6b7a90 !important; }
+    .empty-state, .empty-state * { color: #6b7a90 !important; }
 
     /* ── Footer ────────────────────────────────────────────────────────────── */
     .footer {
         margin-top: 40px;
         padding-top: 16px;
         border-top: 1px solid #dde3ec;
-        color: #8a96a8 !important;
         font-size: 0.78rem;
         text-align: center;
     }
-    .footer * { color: #8a96a8 !important; }
+    .footer, .footer * { color: #8a96a8 !important; }
 
-    /* ── Spinner text ──────────────────────────────────────────────────────── */
-    .stSpinner > div {
-        color: #1a1a2e !important;
-    }
+    /* ── Spinner ───────────────────────────────────────────────────────────── */
+    .stSpinner > div { color: #1a1a2e !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -410,19 +357,18 @@ st.markdown(f"""
 with st.sidebar:
     st.markdown("## 📋 Instructions")
     st.markdown("""
-**Step 1:** Upload PDF calculation files  
+**Step 1:** Enter the **folder name** of your project  
+*(e.g.* `1382 - אולם אירועים` *)*  
+→ number, name & factory auto-detected
+
+**Step 2:** Upload PDF calculation files  
 *(all PDFs for one floor/level)*
 
-**Step 2:** Fill in project details:
-- Project number
-- Project name
-- Floor / level
-- Factory
-- Engineer name
+**Step 3:** Fill in floor/level & verify details
 
-**Step 3:** Click **Build Report**
+**Step 4:** Click **Build Report**
 
-**Step 4:** Download the generated PDF
+**Step 5:** Download the generated PDF
 """)
 
     st.markdown("---")
@@ -511,7 +457,33 @@ col_left, col_right = st.columns([1, 1.4], gap="large")
 #  LEFT COLUMN — Input & Settings
 # ═══════════════════════════════════════════════════════════════════════════════
 with col_left:
-    st.markdown("### 📁 Upload PDF Files")
+    # ── Project Folder Name (auto-fill) ──────────────────────────────────────
+    st.markdown("### 📁 Project Folder Name")
+    st.markdown(
+        '<div class="info-card">💡 Paste the <b>folder name</b> from your project '
+        'directory to auto-fill project number, name &amp; factory.</div>',
+        unsafe_allow_html=True,
+    )
+
+    folder_name = st.text_input(
+        "Folder name",
+        placeholder="e.g. 1382 - אולם אירועים  or  26-09 - קיסריה מרלוג",
+        label_visibility="collapsed",
+    )
+
+    # Parse folder name → project number + name
+    parsed_num = ""
+    parsed_name = ""
+    if folder_name.strip():
+        m = re.match(r"([\d\-A-Za-z]+)\s*[-–—]\s*(.+)", folder_name.strip())
+        if m:
+            parsed_num = m.group(1).strip()
+            parsed_name = m.group(2).strip()
+
+    st.markdown("---")
+
+    # ── Upload PDF Files ─────────────────────────────────────────────────────
+    st.markdown("### 📂 Upload PDF Files")
 
     uploaded_files = st.file_uploader(
         "Upload calculation PDF files",
@@ -544,12 +516,20 @@ with col_left:
     # ── Project Settings ──────────────────────────────────────────────────────
     st.markdown("### ⚙️ Project Settings")
 
-    proj_num = st.text_input("Project Number", placeholder="e.g. 1382, 26-09, 2501")
+    proj_num = st.text_input(
+        "Project Number *",
+        value=parsed_num,
+        placeholder="e.g. 1382, 26-09, 2501",
+    )
 
     # Auto-detect factory
     auto_factory = detect_factory_key(proj_num)
 
-    proj_name = st.text_input("Project Name", placeholder="e.g. אולם אירועים")
+    proj_name = st.text_input(
+        "Project Name",
+        value=parsed_name,
+        placeholder="e.g. אולם אירועים",
+    )
 
     floor_name = st.text_input("Floor / Level", placeholder="e.g. +0.00, +14, גג")
 
