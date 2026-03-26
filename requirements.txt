@@ -1,1 +1,4 @@
 streamlit
+pypdf
+reportlab
+python-bidi
