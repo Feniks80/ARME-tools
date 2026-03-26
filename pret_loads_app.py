@@ -37,15 +37,95 @@ ORG_EMAIL  = "trom@arme.co.il"
 ENGINEER   = "Shimon Donen"
 APP_VER    = "2.1 (web)"
 
-# ── Custom CSS ────────────────────────────────────────────────────────────────
+# ── Custom CSS (force light theme, override dark-mode defaults) ──────────────
 st.markdown("""
 <style>
-    /* Main background */
-    .stApp { background-color: #f5f7fa; }
+    /* ═══ FORCE LIGHT THEME ═══════════════════════════════════════════════════
+       Override ALL Streamlit dark-mode defaults so text is always readable.
+       Every element gets explicit color — no reliance on Streamlit defaults.
+    */
 
-    /* Sidebar */
+    /* Main background — force light */
+    .stApp {
+        background-color: #f5f7fa !important;
+        color: #1a1a2e !important;
+    }
+
+    /* ── Global text color overrides ──────────────────────────────────────── */
+    .stApp .main .block-container,
+    .stApp .main .block-container * {
+        color: #1a1a2e !important;
+    }
+    .stApp .main h1, .stApp .main h2, .stApp .main h3,
+    .stApp .main h4, .stApp .main h5, .stApp .main h6 {
+        color: #1a1a2e !important;
+    }
+    .stApp .main p, .stApp .main span, .stApp .main li,
+    .stApp .main label, .stApp .main div {
+        color: #1a1a2e !important;
+    }
+
+    /* ── Input widgets ────────────────────────────────────────────────────── */
+    .stApp .main [data-testid="stWidgetLabel"] label,
+    .stApp .main [data-testid="stWidgetLabel"] p,
+    .stApp .main [data-testid="stWidgetLabel"] span {
+        color: #1a1a2e !important;
+    }
+    .stApp .main [data-testid="stTextInput"] input,
+    .stApp .main [data-testid="stNumberInput"] input {
+        background-color: #ffffff !important;
+        color: #1a1a2e !important;
+        border: 1px solid #c4ccd8 !important;
+    }
+    .stApp .main [data-testid="stSelectbox"] > div > div {
+        background-color: #ffffff !important;
+        color: #1a1a2e !important;
+        border: 1px solid #c4ccd8 !important;
+    }
+    .stApp .main [data-testid="stSelectbox"] span {
+        color: #1a1a2e !important;
+    }
+    .stApp .main [data-testid="stCheckbox"] label span {
+        color: #1a1a2e !important;
+    }
+    .stApp .main input::placeholder {
+        color: #8a96a8 !important;
+        opacity: 1 !important;
+    }
+    .stApp .main [data-testid="stTooltipIcon"] {
+        color: #6b7a90 !important;
+    }
+    .stApp .main .stCaption, .stApp .main [data-testid="stCaptionContainer"] {
+        color: #6b7a90 !important;
+    }
+    .stApp .main [data-testid="stCaptionContainer"] * {
+        color: #6b7a90 !important;
+    }
+
+    /* ── File uploader ────────────────────────────────────────────────────── */
+    .stApp .main [data-testid="stFileUploader"] {
+        background-color: #ffffff !important;
+        border: 1px solid #c4ccd8 !important;
+        border-radius: 8px !important;
+    }
+    .stApp .main [data-testid="stFileUploader"] * {
+        color: #1a1a2e !important;
+    }
+    .stApp .main [data-testid="stFileUploader"] small {
+        color: #6b7a90 !important;
+    }
+    .stApp .main [data-testid="stFileUploaderDropzone"] {
+        background-color: #f8f9fb !important;
+    }
+
+    /* ── Horizontal rules ─────────────────────────────────────────────────── */
+    .stApp .main hr {
+        border-color: #dde3ec !important;
+    }
+
+    /* ── Sidebar ──────────────────────────────────────────────────────────── */
     [data-testid="stSidebar"] {
-        background-color: #1a2a4a;
+        background-color: #1a2a4a !important;
     }
     [data-testid="stSidebar"] * {
         color: #e8ecf4 !important;
@@ -55,24 +135,30 @@ st.markdown("""
     [data-testid="stSidebar"] h3 {
         color: #ffffff !important;
     }
-
-    /* Monospace output */
-    .result-box {
-        background: #0d1117;
-        color: #c9d1d9;
-        font-family: 'Courier New', Courier, monospace;
-        font-size: 11px;
-        padding: 16px;
-        border-radius: 8px;
-        overflow-x: scroll;
-        white-space: pre;
-        line-height: 1.45;
-        border: 1px solid #30363d;
-        min-width: 0;
-        max-width: 100%;
+    [data-testid="stSidebar"] code {
+        color: #f0c040 !important;
+        background-color: rgba(255,255,255,0.1) !important;
+    }
+    [data-testid="stSidebar"] hr {
+        border-color: rgba(255,255,255,0.15) !important;
     }
 
-    /* Header bar */
+    /* ── Monospace output ─────────────────────────────────────────────────── */
+    .result-box {
+        background: #0d1117 !important;
+        color: #c9d1d9 !important;
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 12px;
+        padding: 16px;
+        border-radius: 8px;
+        overflow-x: auto;
+        white-space: pre;
+        line-height: 1.5;
+        border: 1px solid #30363d;
+    }
+    .result-box * { color: #c9d1d9 !important; }
+
+    /* ── Header bar ───────────────────────────────────────────────────────── */
     .app-header {
         background: linear-gradient(135deg, #1a2a4a 0%, #2d4a8a 100%);
         padding: 18px 28px;
@@ -88,16 +174,16 @@ st.markdown("""
         margin: 0;
     }
     .app-header .subtitle {
-        color: #a8b8d8;
+        color: #a8b8d8 !important;
         font-size: 0.85rem;
         margin-top: 4px;
     }
 
-    /* Buttons */
+    /* ── Buttons ───────────────────────────────────────────────────────────── */
     .stButton > button {
-        background-color: #1a2a4a;
-        color: white;
-        border: none;
+        background-color: #1a2a4a !important;
+        color: white !important;
+        border: none !important;
         border-radius: 6px;
         padding: 10px 28px;
         font-size: 1rem;
@@ -106,55 +192,69 @@ st.markdown("""
         transition: background-color 0.2s;
     }
     .stButton > button:hover {
-        background-color: #2d4a8a;
+        background-color: #2d4a8a !important;
+        color: white !important;
     }
-
-    /* Download button */
     [data-testid="stDownloadButton"] > button {
-        background-color: #1e6b3a;
-        color: white;
-        border: none;
+        background-color: #1e6b3a !important;
+        color: white !important;
+        border: none !important;
         border-radius: 6px;
         width: 100%;
     }
     [data-testid="stDownloadButton"] > button:hover {
-        background-color: #2a8f4e;
+        background-color: #2a8f4e !important;
+        color: white !important;
     }
 
-    /* Info / error cards */
+    /* ── Cards — explicit text color ──────────────────────────────────────── */
     .info-card {
-        background: #e8f0fe;
+        background: #e8f0fe !important;
         border-left: 4px solid #1a2a4a;
         padding: 10px 16px;
         border-radius: 0 6px 6px 0;
         margin: 8px 0;
         font-size: 0.88rem;
+        color: #1a1a2e !important;
     }
+    .info-card * { color: #1a1a2e !important; }
+
     .error-card {
-        background: #fdecea;
+        background: #fdecea !important;
         border-left: 4px solid #c0392b;
         padding: 10px 16px;
         border-radius: 0 6px 6px 0;
         margin: 8px 0;
         font-size: 0.88rem;
+        color: #5a1a1a !important;
     }
+    .error-card * { color: #5a1a1a !important; }
+
     .success-card {
-        background: #e6f4ea;
+        background: #e6f4ea !important;
         border-left: 4px solid #1e6b3a;
         padding: 10px 16px;
         border-radius: 0 6px 6px 0;
         margin: 8px 0;
         font-size: 0.88rem;
+        color: #1a3a1a !important;
     }
+    .success-card * { color: #1a3a1a !important; }
 
-    /* Footer */
+    /* ── Footer ────────────────────────────────────────────────────────────── */
     .footer {
         margin-top: 40px;
         padding-top: 16px;
         border-top: 1px solid #dde3ec;
-        color: #8a96a8;
+        color: #8a96a8 !important;
         font-size: 0.78rem;
         text-align: center;
+    }
+    .footer * { color: #8a96a8 !important; }
+
+    /* ── Spinner ───────────────────────────────────────────────────────────── */
+    .stSpinner > div {
+        color: #1a1a2e !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -370,8 +470,8 @@ with col_out:
         else:
             st.markdown(f'<div class="success-card">✅ <b>{st.session_state.n_projects} project(s) calculated</b></div>', unsafe_allow_html=True)
 
-            # Result display — st.code gives native horizontal scroll
-            st.code(result, language=None)
+            # Result display
+            st.markdown(f'<div class="result-box">{result}</div>', unsafe_allow_html=True)
 
             # ── Download button ──
             if st.session_state.report_text:
