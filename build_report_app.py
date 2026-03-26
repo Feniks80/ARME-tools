@@ -12,6 +12,11 @@ Requires:
     pip install streamlit pypdf reportlab python-bidi
     (build_report.py, annotate_loading.py, config.py must be in the same folder)
 
+Font fix:
+    Place FreeSans.ttf (or any Hebrew-capable TTF) in fonts/ directory.
+    The app copies it into logos/ at startup so build_report.py finds it.
+    On Streamlit Cloud, also add packages.txt with: fonts-freefont-ttf
+
 Metadata embedded in generated PDFs:
     /Author   : ARME ENGINEERS / <engineer_name>
     /Creator  : build_report.py — ARME Engineers (trom@arme.co.il)
@@ -39,6 +44,70 @@ st.set_page_config(
 # ── Resolve base dir (for imports) ───────────────────────────────────────────
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  FONT FIX — ensure Hebrew fonts are discoverable by build_report.py
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+#  build_report.py._setup_fonts() searches for *.ttf in:
+#    1. Hard-coded system paths (C:/Windows/Fonts/arial.ttf, DejaVuSans, etc.)
+#    2. LOGOS_DIR/*.ttf
+#    3. SCRIPT_DIR/*.ttf
+#
+#  On Streamlit Cloud:
+#    - Windows fonts don't exist
+#    - DejaVu/Liberation may or may not be installed
+#    - Our repo has fonts/FreeSans.ttf — but that dir is NOT searched
+#
+#  Fix: copy fonts/*.ttf → logos/ so _setup_fonts() finds them.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def _ensure_hebrew_fonts():
+    """
+    Copy Hebrew-capable TTF from fonts/ into logos/ (where build_report.py looks).
+    Also try system fonts as fallback.
+    """
+    logos_dir = SCRIPT_DIR / "logos"
+    fonts_dir = SCRIPT_DIR / "fonts"
+
+    # Ensure logos/ exists
+    if not logos_dir.exists():
+        logos_dir.mkdir(parents=True, exist_ok=True)
+
+    # Already have .ttf in logos/?
+    if list(logos_dir.glob("*.ttf")):
+        return
+
+    # Source 1: fonts/ directory in repo (FreeSans.ttf, etc.)
+    if fonts_dir.exists():
+        for ttf in fonts_dir.glob("*.ttf"):
+            dst = logos_dir / ttf.name
+            if not dst.exists():
+                try:
+                    shutil.copy2(str(ttf), str(dst))
+                except Exception:
+                    pass
+        if list(logos_dir.glob("*.ttf")):
+            return
+
+    # Source 2: system fonts (Linux / Streamlit Cloud)
+    system_fonts = [
+        "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
+        "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+    ]
+    for src in system_fonts:
+        if os.path.exists(src):
+            dst = logos_dir / Path(src).name
+            if not dst.exists():
+                try:
+                    shutil.copy2(src, str(dst))
+                except Exception:
+                    pass
+
+_ensure_hebrew_fonts()
+
 
 # ── Import engines ───────────────────────────────────────────────────────────
 ENGINE_OK = False
@@ -199,6 +268,17 @@ st.markdown("""
         border-bottom: none;
     }
 
+    /* Folder name input highlight */
+    .folder-hint {
+        background: #fff8e1;
+        border-left: 4px solid #f9a825;
+        padding: 8px 14px;
+        border-radius: 0 6px 6px 0;
+        margin: 8px 0;
+        font-size: 0.85rem;
+        color: #5d4037;
+    }
+
     /* Footer */
     .footer {
         margin-top: 40px;
@@ -227,19 +307,18 @@ st.markdown(f"""
 with st.sidebar:
     st.markdown("## 📋 Instructions")
     st.markdown("""
-**Step 1:** Upload PDF calculation files  
+**Step 1:** Enter the **folder name** of your project  
+*(e.g. `1382 - אולם אירועים`)*  
+→ project number, name & factory are auto-detected
+
+**Step 2:** Upload PDF calculation files  
 *(all PDFs for one floor/level)*
 
-**Step 2:** Fill in project details:
-- Project number
-- Project name
-- Floor / level
-- Factory
-- Engineer name
+**Step 3:** Fill in floor/level & verify other details
 
-**Step 3:** Click **Build Report**
+**Step 4:** Click **Build Report**
 
-**Step 4:** Download the generated PDF
+**Step 5:** Download the generated PDF
 """)
 
     st.markdown("---")
@@ -251,32 +330,36 @@ with st.sidebar:
         st.markdown("*(config.py not found)*")
 
     st.markdown("---")
+    st.markdown("## 🔍 Auto-detect rules")
+    st.markdown("""
+**From folder name:**
+```
+1382 - אולם אירועים
+  └── proj_num: 1382
+       proj_name: אולם אירועים
+```
+```
+26-09 - קיסריה מרלוג
+  └── proj_num: 26-09
+       proj_name: קיסריה מרלוג
+```
+
+**Factory by project number:**
+- `1000–1999` → סלע בן ארי (sela)
+- `2200–2999` → רמת טרום (ramet)
+- `YY-MM` → מפעל חיפה (haifa)
+""")
+
+    st.markdown("---")
     st.markdown("## 📝 Filename Format")
     st.markdown("""
 ```
 nn-h-L+STxx (DL+LL).pdf
 ```
-- **nn** — serial number
-- **h** — slab height (cm)
-- **L** — span length (cm)
-- **ST** — topping width (cm)
-- **DL+LL** — dead + live load (kg/m²)
-
 Example:
 ```
 01-40-1385+ST25 (350+500).pdf
 ```
-""")
-
-    st.markdown("---")
-    st.markdown("## 💡 Tips")
-    st.markdown("""
-- Upload all PDFs for **one floor** at a time
-- Factory is auto-detected from project number:
-  - `1000–1999` → Sela
-  - `2200–2999` → Ramet
-  - `YY-MM` format → Haifa
-- The report includes title page, legend, TOC with clickable links, page numbers, and loading annotations
 """)
 
     st.markdown("---")
@@ -300,24 +383,99 @@ Place them in the same folder as this app and restart.
 
 
 # ── Session state init ────────────────────────────────────────────────────────
-if "report_pdf" not in st.session_state:
-    st.session_state.report_pdf = None
-if "report_filename" not in st.session_state:
-    st.session_state.report_filename = None
-if "build_log" not in st.session_state:
-    st.session_state.build_log = None
-if "build_success" not in st.session_state:
-    st.session_state.build_success = False
+for key, default in [
+    ("report_pdf", None),
+    ("report_filename", None),
+    ("build_log", None),
+    ("build_success", False),
+    ("auto_proj_num", ""),
+    ("auto_proj_name", ""),
+    ("auto_factory", ""),
+]:
+    if key not in st.session_state:
+        st.session_state[key] = default
 
 
-# ── Utility: detect factory from project number ──────────────────────────────
+# ═══════════════════════════════════════════════════════════════════════════════
+#  UTILITY FUNCTIONS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def parse_folder_name(folder_name: str):
+    """
+    Parse project folder name → (project_num, project_name).
+    Patterns:
+        '1382 - אולם אירועים'  → ('1382', 'אולם אירועים')
+        '26-09 - קיסריה מרלוג'  → ('26-09', 'קיסריה מרלוג')
+        '2501'                   → ('2501', '')
+    """
+    name = folder_name.strip()
+    m = re.match(r"([\d][\d\-]*\d?)\s+-\s+(.+)", name)
+    if m:
+        return m.group(1).strip(), m.group(2).strip()
+    m2 = re.match(r"^(\d[\d\-]*\d?)(?:\s|$)", name)
+    if m2:
+        return m2.group(1).strip(), ""
+    return "", ""
+
+
 def detect_factory_key(proj_num: str) -> str:
-    """Auto-detect factory from project number."""
-    if not proj_num:
+    """Auto-detect factory from project number via config."""
+    if not proj_num or not CONFIG_OK:
         return ""
     if hasattr(cfg, 'detect_factory'):
         return cfg.detect_factory(proj_num)
     return ""
+
+
+def copy_fonts_to_dir(target_dir: Path):
+    """
+    Copy Hebrew-capable TTF fonts into target_dir.
+    Sources (in priority order):
+      1. SCRIPT_DIR/fonts/*.ttf  (repo fonts — FreeSans.ttf)
+      2. SCRIPT_DIR/logos/*.ttf  (already copied at startup)
+      3. System fonts (Linux fallback)
+    """
+    if not target_dir.exists():
+        target_dir.mkdir(parents=True, exist_ok=True)
+
+    # Already have .ttf?
+    if list(target_dir.glob("*.ttf")):
+        return
+
+    # Source 1: fonts/ in repo
+    fonts_dir = SCRIPT_DIR / "fonts"
+    if fonts_dir.exists():
+        for ttf in fonts_dir.glob("*.ttf"):
+            try:
+                shutil.copy2(str(ttf), str(target_dir / ttf.name))
+            except Exception:
+                pass
+        if list(target_dir.glob("*.ttf")):
+            return
+
+    # Source 2: logos/ (may have fonts from _ensure_hebrew_fonts)
+    logos_dir = SCRIPT_DIR / "logos"
+    if logos_dir.exists():
+        for ttf in logos_dir.glob("*.ttf"):
+            try:
+                shutil.copy2(str(ttf), str(target_dir / ttf.name))
+            except Exception:
+                pass
+        if list(target_dir.glob("*.ttf")):
+            return
+
+    # Source 3: system fonts
+    for src in [
+        "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
+        "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+    ]:
+        if os.path.exists(src):
+            try:
+                shutil.copy2(src, str(target_dir / Path(src).name))
+            except Exception:
+                pass
 
 
 # ── Main layout ───────────────────────────────────────────────────────────────
@@ -328,6 +486,60 @@ col_left, col_right = st.columns([1, 1.4], gap="large")
 #  LEFT COLUMN — Input & Settings
 # ═══════════════════════════════════════════════════════════════════════════════
 with col_left:
+
+    # ── Folder name input (auto-detect project) ──────────────────────────────
+    st.markdown("### 📂 Project Folder Name")
+    st.markdown(
+        '<div class="folder-hint">'
+        '💡 Paste the <b>folder name</b> from your project directory to auto-fill '
+        'project number, name & factory.'
+        '</div>',
+        unsafe_allow_html=True
+    )
+
+    folder_name_input = st.text_input(
+        "Folder name",
+        placeholder="e.g.  1382 - אולם אירועים   or   26-09 - קיסריה מרלוג",
+        label_visibility="collapsed",
+    )
+
+    # Auto-parse folder name
+    if folder_name_input.strip():
+        parsed_num, parsed_name = parse_folder_name(folder_name_input)
+        if parsed_num:
+            st.session_state.auto_proj_num = parsed_num
+            st.session_state.auto_proj_name = parsed_name
+            st.session_state.auto_factory = detect_factory_key(parsed_num)
+
+            factory_display = ""
+            if st.session_state.auto_factory and CONFIG_OK:
+                fname = cfg.FACTORIES.get(st.session_state.auto_factory, {}).get("name", "")
+                factory_display = f" &nbsp;·&nbsp; 🏭 {fname} ({st.session_state.auto_factory})"
+
+            st.markdown(
+                f'<div class="success-card">'
+                f'✅ Detected: <b>{parsed_num}</b>'
+                f'{" — " + parsed_name if parsed_name else ""}'
+                f'{factory_display}'
+                f'</div>',
+                unsafe_allow_html=True
+            )
+        else:
+            st.markdown(
+                '<div class="error-card">'
+                '⚠️ Could not parse folder name. Expected format: '
+                '<code>1382 - שם פרויקט</code> or <code>26-09 - שם פרויקט</code>'
+                '</div>',
+                unsafe_allow_html=True
+            )
+    else:
+        st.session_state.auto_proj_num = ""
+        st.session_state.auto_proj_name = ""
+        st.session_state.auto_factory = ""
+
+    st.markdown("---")
+
+    # ── Upload PDFs ───────────────────────────────────────────────────────────
     st.markdown("### 📁 Upload PDF Files")
 
     uploaded_files = st.file_uploader(
@@ -339,15 +551,15 @@ with col_left:
     )
 
     if uploaded_files:
-        # Filter out any obvious report files
         valid_files = [f for f in uploaded_files
                        if "Static_Calculations_Report" not in f.name
                        and not f.name.replace(".pdf", "").endswith("_report")]
 
-        st.markdown(f'<div class="info-card">📄 <b>{len(valid_files)} PDF file(s)</b> uploaded</div>',
-                    unsafe_allow_html=True)
+        st.markdown(
+            f'<div class="info-card">📄 <b>{len(valid_files)} PDF file(s)</b> uploaded</div>',
+            unsafe_allow_html=True
+        )
 
-        # Show file list
         file_names_html = "".join(
             f'<div class="file-item">{i+1:2d}. {f.name}</div>'
             for i, f in enumerate(valid_files)
@@ -361,14 +573,22 @@ with col_left:
     # ── Project Settings ──────────────────────────────────────────────────────
     st.markdown("### ⚙️ Project Settings")
 
-    proj_num = st.text_input("Project Number", placeholder="e.g. 1382, 26-09, 2501")
+    proj_num = st.text_input(
+        "Project Number *",
+        value=st.session_state.auto_proj_num,
+        placeholder="e.g. 1382, 26-09, 2501",
+    )
 
-    # Auto-detect factory
-    auto_factory = detect_factory_key(proj_num)
+    proj_name = st.text_input(
+        "Project Name",
+        value=st.session_state.auto_proj_name,
+        placeholder="e.g. אולם אירועים",
+    )
 
-    proj_name = st.text_input("Project Name", placeholder="e.g. אולם אירועים")
-
-    floor_name = st.text_input("Floor / Level", placeholder="e.g. +0.00, +14, גג")
+    floor_name = st.text_input(
+        "Floor / Level *",
+        placeholder="e.g. +0.00, +14, גג, -1",
+    )
 
     # Factory selector
     factory_options = {}
@@ -376,27 +596,30 @@ with col_left:
         factory_options = {k: f"{v['name']} ({k})" for k, v in cfg.FACTORIES.items()}
 
     factory_keys = list(factory_options.keys())
-    factory_labels = list(factory_options.values())
 
     default_idx = 0
-    if auto_factory and auto_factory in factory_keys:
-        default_idx = factory_keys.index(auto_factory)
+    auto_fk = st.session_state.auto_factory or detect_factory_key(proj_num)
+    if auto_fk and auto_fk in factory_keys:
+        default_idx = factory_keys.index(auto_fk)
 
     factory_selection = st.selectbox(
-        "Factory",
+        "Factory *",
         options=factory_keys,
         format_func=lambda k: factory_options.get(k, k),
         index=default_idx,
         help="Auto-detected from project number when possible",
     )
 
-    if auto_factory and auto_factory == factory_selection:
-        st.markdown(f'<div class="info-card">🏭 Factory auto-detected: <b>{factory_options.get(auto_factory, auto_factory)}</b></div>',
-                    unsafe_allow_html=True)
+    if auto_fk and auto_fk == factory_selection:
+        st.markdown(
+            f'<div class="info-card">🏭 Auto-detected: '
+            f'<b>{factory_options.get(auto_fk, auto_fk)}</b></div>',
+            unsafe_allow_html=True
+        )
 
     engineer_name = st.text_input(
         "Engineer",
-        value=getattr(cfg, 'DEFAULT_ENGINEER', 'שמעון דונן'),
+        value=getattr(cfg, 'DEFAULT_ENGINEER', 'שמעון דונן') if CONFIG_OK else 'שמעון דונן',
         help="Engineer name for the report title page",
     )
 
@@ -405,13 +628,13 @@ with col_left:
     annotate_loading = st.checkbox(
         "✏️ Annotate Loading pages",
         value=True,
-        help="Add load annotations on Loading pages (requires annotate_loading.py)",
+        help="Add load annotations on Loading pages",
         disabled=not ANNOTATE_OK,
     )
     if not ANNOTATE_OK:
         st.caption("⚠️ annotate_loading.py not found — annotations disabled")
 
-    # ── Build button ──────────────────────────────────────────────────────────
+    # Build button
     st.markdown("---")
     build_clicked = st.button("▶  Build Report", use_container_width=True)
 
@@ -422,9 +645,8 @@ with col_left:
 with col_right:
     st.markdown("### 📊 Report Output")
 
-    # ── Build action ──────────────────────────────────────────────────────────
     if build_clicked:
-        # Validate inputs
+        # Validate
         errors = []
         if not valid_files:
             errors.append("No PDF files uploaded")
@@ -437,52 +659,67 @@ with col_right:
 
         if errors:
             err_html = "<br>".join(f"• {e}" for e in errors)
-            st.markdown(f'<div class="error-card">⚠️ <b>Cannot build report:</b><br>{err_html}</div>',
-                        unsafe_allow_html=True)
+            st.markdown(
+                f'<div class="error-card">⚠️ <b>Cannot build report:</b><br>{err_html}</div>',
+                unsafe_allow_html=True
+            )
         else:
-            # ── Run the build ─────────────────────────────────────────────────
             with st.spinner("Building report... This may take a moment."):
                 tmpdir = None
+                old_stdout = sys.stdout
+                log_capture = io.StringIO()
+
                 try:
-                    # Create temp directory structure
                     tmpdir = tempfile.mkdtemp(prefix="arme_report_")
-                    project_dir = Path(tmpdir) / f"{proj_num.strip()} - {proj_name.strip()}"
-                    floor_dir = project_dir / floor_name.strip()
+                    p_num = proj_num.strip()
+                    p_name = proj_name.strip()
+                    fl_name = floor_name.strip()
+
+                    if p_name:
+                        project_dir = Path(tmpdir) / f"{p_num} - {p_name}"
+                    else:
+                        project_dir = Path(tmpdir) / p_num
+                    floor_dir = project_dir / fl_name
                     floor_dir.mkdir(parents=True, exist_ok=True)
 
-                    # Copy logos to temp dir if available
-                    logos_src = SCRIPT_DIR / "logos"
+                    # ── Prepare logos dir with fonts ──────────────────────────
                     logos_dst = Path(tmpdir) / "logos"
+                    logos_src = SCRIPT_DIR / "logos"
                     if logos_src.exists():
                         shutil.copytree(str(logos_src), str(logos_dst))
                     else:
-                        # Try to find logo files in SCRIPT_DIR directly
                         logos_dst.mkdir(exist_ok=True)
                         for img_ext in ["*.jpg", "*.jpeg", "*.png", "*.gif"]:
                             for img in SCRIPT_DIR.glob(img_ext):
                                 shutil.copy2(str(img), str(logos_dst / img.name))
 
-                    # Point engine to temp logos
+                    # Copy Hebrew fonts into logos_dst
+                    copy_fonts_to_dir(logos_dst)
+
+                    # ── Point engine to temp logos ────────────────────────────
                     old_logos_dir = engine.LOGOS_DIR
-                    if logos_dst.exists():
-                        engine.LOGOS_DIR = logos_dst
+                    engine.LOGOS_DIR = logos_dst
 
-                    # Save uploaded PDFs to floor directory
+                    # Re-register fonts with new paths
+                    try:
+                        new_fn, new_fb = engine._setup_fonts()
+                        engine.FN = new_fn
+                        engine.FB = new_fb
+                    except Exception:
+                        pass
+
+                    # ── Save uploaded PDFs ────────────────────────────────────
                     for uf in valid_files:
-                        pdf_path = floor_dir / uf.name
-                        pdf_path.write_bytes(uf.getbuffer())
+                        (floor_dir / uf.name).write_bytes(uf.getbuffer())
 
-                    # Capture stdout for log
-                    old_stdout = sys.stdout
-                    sys.stdout = log_capture = io.StringIO()
+                    # ── Capture stdout ────────────────────────────────────────
+                    sys.stdout = log_capture
 
-                    # Patch parse_project_folder for our temp structure
+                    # ── Patch parse_project_folder ────────────────────────────
                     orig_parse = engine.parse_project_folder
-                    p_num = proj_num.strip()
-                    p_name = proj_name.strip()
                     def patched_parse(fp):
                         fp_name = Path(fp).name
-                        m = re.match(r"([\d-]+)\s*-\s*(.+)", fp_name)
+                        m = re.match(r"([\d][\d\-]*\d?)\s*-\s*(.+)", fp_name)
                         if m:
                             return m.group(1).strip(), m.group(2).strip()
                         return p_num, p_name
@@ -494,7 +731,7 @@ with col_right:
                             floor_folder=floor_dir,
                             factory_key=factory_selection,
                             engineer=engineer_name.strip() or getattr(cfg, 'DEFAULT_ENGINEER', ''),
-                            floor_name=floor_name.strip(),
+                            floor_name=fl_name,
                             no_annotate=not annotate_loading,
                         )
                     finally:
@@ -504,12 +741,9 @@ with col_right:
                     sys.stdout = old_stdout
                     log_output = log_capture.getvalue()
 
-                    # Read the generated PDF
                     if output_path and Path(output_path).exists():
-                        report_bytes = Path(output_path).read_bytes()
-                        report_name = Path(output_path).name
-                        st.session_state.report_pdf = report_bytes
-                        st.session_state.report_filename = report_name
+                        st.session_state.report_pdf = Path(output_path).read_bytes()
+                        st.session_state.report_filename = Path(output_path).name
                         st.session_state.build_log = log_output
                         st.session_state.build_success = True
                     else:
@@ -518,14 +752,14 @@ with col_right:
                         st.session_state.build_success = False
 
                 except Exception as e:
-                    sys.stdout = old_stdout if 'old_stdout' in dir() else sys.__stdout__
-                    log_text = log_capture.getvalue() if 'log_capture' in dir() else ""
+                    sys.stdout = old_stdout
+                    log_text = log_capture.getvalue()
                     st.session_state.report_pdf = None
                     st.session_state.build_log = f"{log_text}\n\nERROR: {type(e).__name__}: {e}"
                     st.session_state.build_success = False
 
                 finally:
-                    # Cleanup temp directory
+                    sys.stdout = old_stdout
                     if tmpdir and os.path.exists(tmpdir):
                         try:
                             shutil.rmtree(tmpdir)
@@ -541,7 +775,6 @@ with col_right:
             unsafe_allow_html=True
         )
 
-        # Download button
         st.download_button(
             label=f"⬇️  Download {st.session_state.report_filename}",
             data=st.session_state.report_pdf,
@@ -575,8 +808,10 @@ with col_right:
             color:#8a96a8; font-size:0.95rem; text-align:center; padding: 20px;">
     <div>
         <div style="font-size:2.5rem; margin-bottom:10px;">📐</div>
-        Upload PDF files, fill in project details,<br>
-        and click <b>&nbsp;▶ Build Report</b> to generate.
+        <b>1.</b> Paste folder name &nbsp;→&nbsp;
+        <b>2.</b> Upload PDFs &nbsp;→&nbsp;
+        <b>3.</b> Set floor &nbsp;→&nbsp;
+        <b>4.</b> Build Report
     </div>
 </div>
 """, unsafe_allow_html=True)

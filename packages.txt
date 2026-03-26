@@ -1,0 +1,2 @@
+fonts-freefont-ttf
+fonts-dejavu-core
