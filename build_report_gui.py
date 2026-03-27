@@ -1,17 +1,13 @@
 """
 Build Report — GUI
-Graphical interface for PDF report generation.
-
-Organization: ARME Engineers (ארמה מהנדסים)
-Email: trom@arme.co.il
-Engineer: Shimon Donen (שמעון דונן)
+Графический интерфейс для генерации PDF-отчётов преднапряжённых плит.
 
 Requires: build_report.py, config.py, annotate_loading.py in the same folder.
-Organization: ARME Engineers | trom@arme.co.il | Shimon Donen
+Organization: ARME Engineers | Shimon Donen
 
 Metadata embedded in generated PDFs:
     /Author   : ARME ENGINEERS / <engineer_name>
-    /Creator  : build_report.py — ARME Engineers (trom@arme.co.il)
+    /Creator  : build_report.py — ARME Engineers (<factory-specific email>)
     /Producer : ARME Engineers Build Report Generator v2.0
 """
 
@@ -92,7 +88,7 @@ C_ORANGE    = "#fab387"
 # ── App metadata ──────────────────────────────────────────────────────────────
 APP_VERSION  = "2.0"
 APP_ORG      = "ARME Engineers"
-APP_EMAIL    = "trom@arme.co.il"
+APP_EMAIL    = "trom@arme.co.il"   # UI default; per-factory email handled by config.get_email()
 APP_ENGINEER = "שמעון דונן"
 
 
@@ -114,31 +110,17 @@ def _open_file(filepath):
 
 def _parse_folder_name(folder_path: str):
     """
-    Try to extract project number and name from folder path.
-    Walks up parent folders to find 'NUMBER - NAME' pattern.
-
-    Typical paths:
-        J:\\10296 - RAMET\\2278 - קרית ביאליק\\DESIGN
-        M:\\_PLATOT SELA-BEN ARI\\1380 - מפעל טרמודן\\design
-        J:\\10299 - HAIFA\\26-09 - קיסריה מרלוג\\design\\+24
-
+    Try to extract project number and name from folder name.
+    Patterns: '1382 - אולם אירועים', '26-09 - קיסריה מרלוג'
     Returns (project_num, project_name) or (None, None).
     """
-    p = Path(folder_path).resolve()
-    # Walk up through current folder and parents (up to 4 levels)
-    for part in [p] + list(p.parents)[:4]:
-        name = part.name
-        # Skip generic folder names
-        if name.lower() in ('design', 'designs', 'pdf', 'pdfs', ''):
-            continue
-        # Try to match "NUMBER - NAME" pattern
-        m = re.match(r"([\d][\d\-]*\d?)\s+-\s+(.+)", name)
-        if m:
-            return m.group(1).strip(), m.group(2).strip()
-        # Try number-only folder
-        m2 = re.match(r"^(\d[\d\-]*\d?)(?:\s|$)", name)
-        if m2:
-            return m2.group(1).strip(), ""
+    name = Path(folder_path).name
+    m = re.match(r"([\d][\d\-]*\d?)\s+-\s+(.+)", name)
+    if m:
+        return m.group(1).strip(), m.group(2).strip()
+    m2 = re.match(r"^(\d[\d\-]*\d?)(?:\s|$)", name)
+    if m2:
+        return m2.group(1).strip(), ""
     return None, None
 
 
@@ -626,15 +608,8 @@ class BuildReportApp(tk.Tk):
 
         # ── Detect project info ──
         proj_num, proj_name = _parse_folder_name(str(folder))
-
-        # Auto-detect floor from actual_folder name if it looks like a floor
-        if actual_folder != folder:
-            floor_name = actual_folder.name
-            if not self._floor_var.get():
-                self._floor_var.set(floor_name)
-        elif folder.name.lower() not in ('design', 'designs', 'pdf', 'pdfs'):
-            # If user selected a folder whose name IS the project, floor needs manual input
-            pass
+        if not proj_num:
+            proj_num, proj_name = _parse_folder_name(str(folder.parent))
 
         if proj_num:
             self._proj_num_var.set(proj_num)
@@ -751,14 +726,10 @@ class BuildReportApp(tk.Tk):
         floor_folder = self._floor_folder or Path(folder)
 
         project_folder = Path(folder)
-        # Walk up parents to find the actual project folder (NUMBER - NAME)
-        for candidate in [project_folder] + list(project_folder.parents)[:4]:
-            if candidate.name.lower() in ('design', 'designs', 'pdf', 'pdfs', ''):
-                continue
-            cand_num, _ = _parse_folder_name(str(candidate))
-            if cand_num and cand_num == proj_num:
-                project_folder = candidate
-                break
+        parent = project_folder.parent
+        parent_num, _ = _parse_folder_name(str(parent))
+        if parent_num and parent_num == proj_num:
+            project_folder = parent
 
         def run():
             try:

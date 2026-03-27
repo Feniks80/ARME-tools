@@ -1,6 +1,6 @@
 """
 build_report_app.py — ARME Engineers | Build Report Generator (Streamlit web app)
-trom@arme.co.il | Shimon Donen
+Arme Engineers | trom@arme.co.il | Shimon Donen
 
 Streamlit Cloud web interface for building PDF reports from prestressed slab calculations.
 Combines build_report.py + annotate_loading.py into a single web workflow.
@@ -14,7 +14,7 @@ Requires:
 
 Metadata embedded in generated PDFs:
     /Author   : ARME ENGINEERS / <engineer_name>
-    /Creator  : build_report.py — ARME Engineers (trom@arme.co.il)
+    /Creator  : build_report.py — ARME Engineers (<factory-specific email>)
     /Producer : ARME Engineers Build Report Generator v2.1-web
 """
 
@@ -69,12 +69,15 @@ ORG_EMAIL  = "trom@arme.co.il"
 ENGINEER   = "Shimon Donen"
 APP_VER    = "2.1 (web)"
 
-# ── Custom CSS — only custom elements; base theme from .streamlit/config.toml ─
+# ── Custom CSS (matching pret_loads_app.py) ──────────────────────────────────
 st.markdown("""
 <style>
-    /* ── Sidebar — dark navy ──────────────────────────────────────────────── */
+    /* Main background */
+    .stApp { background-color: #f5f7fa; }
+
+    /* Sidebar */
     [data-testid="stSidebar"] {
-        background-color: #1a2a4a !important;
+        background-color: #1a2a4a;
     }
     [data-testid="stSidebar"] * {
         color: #e8ecf4 !important;
@@ -84,52 +87,64 @@ st.markdown("""
     [data-testid="stSidebar"] h3 {
         color: #ffffff !important;
     }
-    [data-testid="stSidebar"] code {
-        color: #f0c040 !important;
-        background-color: rgba(255,255,255,0.1) !important;
-    }
 
-    /* ── Header bar ───────────────────────────────────────────────────────── */
+    /* Header bar */
     .app-header {
         background: linear-gradient(135deg, #1a2a4a 0%, #2d4a8a 100%);
         padding: 18px 28px;
         border-radius: 10px;
         margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
     }
-    .app-header * { color: white !important; }
-    .app-header h1 { font-size: 1.6rem; margin: 0; }
-    .app-header .subtitle, .app-header .subtitle * { color: #a8b8d8 !important; font-size: 0.85rem; }
-
-    /* ── Buttons ───────────────────────────────────────────────────────────── */
-    .stButton > button {
-        background-color: #1a2a4a !important;
+    .app-header h1 {
         color: white !important;
-        border: none !important;
+        font-size: 1.6rem;
+        margin: 0;
+    }
+    .app-header .subtitle {
+        color: #a8b8d8;
+        font-size: 0.85rem;
+        margin-top: 4px;
+    }
+
+    /* Buttons */
+    .stButton > button {
+        background-color: #1a2a4a;
+        color: white;
+        border: none;
         border-radius: 6px;
         padding: 10px 28px;
         font-size: 1rem;
         font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.2s;
     }
-    .stButton > button:hover { background-color: #2d4a8a !important; }
-    .stButton > button * { color: white !important; }
+    .stButton > button:hover {
+        background-color: #2d4a8a;
+    }
 
+    /* Download button */
     [data-testid="stDownloadButton"] > button {
-        background-color: #1e6b3a !important;
-        color: white !important;
-        border: none !important;
+        background-color: #1e6b3a;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        width: 100%;
     }
-    [data-testid="stDownloadButton"] > button:hover { background-color: #2a8f4e !important; }
-    [data-testid="stDownloadButton"] > button * { color: white !important; }
+    [data-testid="stDownloadButton"] > button:hover {
+        background-color: #2a8f4e;
+    }
 
-    /* ── Cards ─────────────────────────────────────────────────────────────── */
+    /* Info / error / success cards */
     .info-card {
-        background: #dce8fc;
+        background: #e8f0fe;
         border-left: 4px solid #1a2a4a;
         padding: 10px 16px;
         border-radius: 0 6px 6px 0;
         margin: 8px 0;
         font-size: 0.88rem;
-        color: #1a1a2e;
     }
     .error-card {
         background: #fdecea;
@@ -138,67 +153,53 @@ st.markdown("""
         border-radius: 0 6px 6px 0;
         margin: 8px 0;
         font-size: 0.88rem;
-        color: #5a1a1a;
     }
     .success-card {
-        background: #d4edda;
+        background: #e6f4ea;
         border-left: 4px solid #1e6b3a;
         padding: 10px 16px;
         border-radius: 0 6px 6px 0;
         margin: 8px 0;
         font-size: 0.88rem;
-        color: #1a3a1a;
     }
 
-    /* ── Log box ───────────────────────────────────────────────────────────── */
+    /* Monospace log */
     .log-box {
         background: #0d1117;
-        font-family: 'Courier New', monospace;
+        color: #c9d1d9;
+        font-family: 'Courier New', Courier, monospace;
         font-size: 11px;
         padding: 14px;
         border-radius: 8px;
+        overflow-x: auto;
         white-space: pre-wrap;
         line-height: 1.5;
         border: 1px solid #30363d;
         max-height: 400px;
         overflow-y: auto;
     }
-    .log-box, .log-box * { color: #c9d1d9 !important; }
 
-    /* ── File list ─────────────────────────────────────────────────────────── */
+    /* File list */
     .file-list {
         background: #ffffff;
         border: 1px solid #dde3ec;
         border-radius: 8px;
         padding: 8px 12px;
-        font-family: 'Courier New', monospace;
+        font-family: 'Courier New', Courier, monospace;
         font-size: 0.82rem;
         max-height: 300px;
         overflow-y: auto;
         line-height: 1.6;
-        color: #1a1a2e;
     }
     .file-list .file-item {
         padding: 2px 0;
         border-bottom: 1px solid #f0f2f5;
     }
-
-    /* ── Empty state ───────────────────────────────────────────────────────── */
-    .empty-state {
-        height: 280px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: #e4e9f2;
-        border-radius: 8px;
-        border: 1px dashed #bbc4d8;
-        color: #6b7a90;
-        font-size: 0.95rem;
-        text-align: center;
-        padding: 20px;
+    .file-list .file-item:last-child {
+        border-bottom: none;
     }
 
-    /* ── Footer ────────────────────────────────────────────────────────────── */
+    /* Footer */
     .footer {
         margin-top: 40px;
         padding-top: 16px;
@@ -226,18 +227,19 @@ st.markdown(f"""
 with st.sidebar:
     st.markdown("## 📋 Instructions")
     st.markdown("""
-**Step 1:** Enter the **folder name** of your project  
-*(e.g.* `1382 - אולם אירועים` *)*  
-→ number, name & factory auto-detected
-
-**Step 2:** Upload PDF calculation files  
+**Step 1:** Upload PDF calculation files  
 *(all PDFs for one floor/level)*
 
-**Step 3:** Fill in floor/level & verify details
+**Step 2:** Fill in project details:
+- Project number
+- Project name
+- Floor / level
+- Factory
+- Engineer name
 
-**Step 4:** Click **Build Report**
+**Step 3:** Click **Build Report**
 
-**Step 5:** Download the generated PDF
+**Step 4:** Download the generated PDF
 """)
 
     st.markdown("---")
@@ -326,33 +328,7 @@ col_left, col_right = st.columns([1, 1.4], gap="large")
 #  LEFT COLUMN — Input & Settings
 # ═══════════════════════════════════════════════════════════════════════════════
 with col_left:
-    # ── Project Folder Name (auto-fill) ──────────────────────────────────────
-    st.markdown("### 📁 Project Folder Name")
-    st.markdown(
-        '<div class="info-card">💡 Paste the <b>folder name</b> from your project '
-        'directory to auto-fill project number, name &amp; factory.</div>',
-        unsafe_allow_html=True,
-    )
-
-    folder_name = st.text_input(
-        "Folder name",
-        placeholder="e.g. 1382 - אולם אירועים  or  26-09 - קיסריה מרלוג",
-        label_visibility="collapsed",
-    )
-
-    # Parse folder name → project number + name
-    parsed_num = ""
-    parsed_name = ""
-    if folder_name.strip():
-        m = re.match(r"([\d\-A-Za-z]+)\s*[-–—]\s*(.+)", folder_name.strip())
-        if m:
-            parsed_num = m.group(1).strip()
-            parsed_name = m.group(2).strip()
-
-    st.markdown("---")
-
-    # ── Upload PDF Files ─────────────────────────────────────────────────────
-    st.markdown("### 📂 Upload PDF Files")
+    st.markdown("### 📁 Upload PDF Files")
 
     uploaded_files = st.file_uploader(
         "Upload calculation PDF files",
@@ -385,20 +361,12 @@ with col_left:
     # ── Project Settings ──────────────────────────────────────────────────────
     st.markdown("### ⚙️ Project Settings")
 
-    proj_num = st.text_input(
-        "Project Number *",
-        value=parsed_num,
-        placeholder="e.g. 1382, 26-09, 2501",
-    )
+    proj_num = st.text_input("Project Number", placeholder="e.g. 1382, 26-09, 2501")
 
     # Auto-detect factory
     auto_factory = detect_factory_key(proj_num)
 
-    proj_name = st.text_input(
-        "Project Name",
-        value=parsed_name,
-        placeholder="e.g. אולם אירועים",
-    )
+    proj_name = st.text_input("Project Name", placeholder="e.g. אולם אירועים")
 
     floor_name = st.text_input("Floor / Level", placeholder="e.g. +0.00, +14, גג")
 
@@ -602,7 +570,9 @@ with col_right:
     # ── Empty state ───────────────────────────────────────────────────────────
     if not st.session_state.build_log:
         st.markdown("""
-<div class="empty-state">
+<div style="height:280px; display:flex; align-items:center; justify-content:center;
+            background:#eef1f7; border-radius:8px; border:1px dashed #bbc4d8;
+            color:#8a96a8; font-size:0.95rem; text-align:center; padding: 20px;">
     <div>
         <div style="font-size:2.5rem; margin-bottom:10px;">📐</div>
         Upload PDF files, fill in project details,<br>
