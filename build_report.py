@@ -47,7 +47,7 @@ sys.path.insert(0, str(SCRIPT_DIR))
 try:
     import config as cfg
 except ImportError:
-    print("❌  config.py не найден рядом со скриптом"); sys.exit(1)
+    print("❌  config.py not found next to script"); sys.exit(1)
 
 LOGOS_DIR = SCRIPT_DIR / "logos"
 PROJECTS_ROOT = Path(getattr(cfg, 'PROJECTS_ROOT', SCRIPT_DIR))
@@ -57,7 +57,7 @@ try:
     from annotate_loading import annotate_pdf_loading
     HAS_ANNOTATE = True
 except ImportError:
-    print("⚠️  annotate_loading.py не найден — аннотации Loading будут пропущены")
+    print("⚠️  annotate_loading.py not found — Loading annotations will be skipped")
     HAS_ANNOTATE = False
 
 # ── Bidi ─────────────────────────────────────────────────────────────────────
@@ -66,7 +66,7 @@ try:
     def heb(text):
         return get_display(str(text))
 except ImportError:
-    print("⚠️   python-bidi не установлен — иврит может отображаться зеркально.")
+    print("⚠️   python-bidi not installed — Hebrew may appear mirrored.")
     print("    pip install python-bidi")
     def heb(text):
         # Простой fallback: переворачиваем RTL runs
@@ -132,52 +132,49 @@ def parse_project_folder(folder_path):
     return "", name
 
 def find_project_folder(project_id):
-    """Находит папку проекта по номеру (начало имени)."""
+    """Find project folder by number (start of name)."""
     if not PROJECTS_ROOT.exists():
-        print(f"❌  Папка проектов не найдена: {PROJECTS_ROOT}")
+        print(f"❌  Projects folder not found: {PROJECTS_ROOT}")
         sys.exit(1)
     matches = []
     for d in PROJECTS_ROOT.iterdir():
         if d.is_dir() and d.name.startswith(project_id):
-            # проверяем что после номера идёт " - " или конец
             rest = d.name[len(project_id):]
             if not rest or rest.startswith(" -") or rest.startswith("-"):
                 matches.append(d)
     if len(matches) == 1:
         return matches[0]
     if len(matches) > 1:
-        print(f"\n  Найдено несколько проектов с номером {project_id}:")
+        print(f"\n  Multiple projects found for {project_id}:")
         for i, m in enumerate(matches, 1):
             print(f"    {i}. {m.name}")
-        choice = input(f"  Выбери (1-{len(matches)}): ").strip()
+        choice = input(f"  Choose (1-{len(matches)}): ").strip()
         try:
             return matches[int(choice)-1]
         except (ValueError, IndexError):
-            print("❌  Неверный выбор"); sys.exit(1)
+            print("❌  Invalid choice"); sys.exit(1)
     return None
 
 def list_projects():
-    """Выводит список всех проектов."""
+    """List all projects."""
     if not PROJECTS_ROOT.exists():
-        print(f"❌  Папка проектов не найдена: {PROJECTS_ROOT}")
+        print(f"❌  Projects folder not found: {PROJECTS_ROOT}")
         return
     dirs = sorted([d for d in PROJECTS_ROOT.iterdir() if d.is_dir()
                    and not d.name.startswith(('.', '_'))
                    and d.name != 'logos'])
     if not dirs:
-        print("  Нет папок проектов.")
+        print("  No project folders found.")
         return
-    print(f"\n  Проекты в {PROJECTS_ROOT}:\n")
+    print(f"\n  Projects in {PROJECTS_ROOT}:\n")
     for d in dirs:
         num, name = parse_project_folder(d)
         factory_key = cfg.detect_factory(num) if num else ""
         factory_name = cfg.FACTORIES.get(factory_key, {}).get('name', '?')
-        # count subfolders (floors)
         floors = [f for f in d.iterdir() if f.is_dir() and not f.name.startswith('.')]
-        # count pdfs directly
         pdfs = list(d.glob("*.pdf"))
         if floors:
-            print(f"    {num:10s}  {name:40s}  [{factory_name}]  {len(floors)} отметок")
+            print(f"    {num:10s}  {name:40s}  [{factory_name}]  {len(floors)} floors")
         elif pdfs:
             print(f"    {num:10s}  {name:40s}  [{factory_name}]  {len(pdfs)} PDF")
         else:
@@ -637,7 +634,7 @@ def build_report(project_folder, floor_folder, factory_key, engineer=None, outpu
         floor_name = floor_folder.name  # "+14", "גג", etc.
 
     if factory_key not in cfg.FACTORIES:
-        raise ValueError(f"Завод «{factory_key}» не найден")
+        raise ValueError(f"Factory «{factory_key}» not found")
     factory = cfg.FACTORIES[factory_key]
     engineer = engineer or cfg.DEFAULT_ENGINEER
     output_name = output or f"{project_num}_{floor_name}_Static_Calculations_Report.pdf"
@@ -645,15 +642,15 @@ def build_report(project_folder, floor_folder, factory_key, engineer=None, outpu
 
     pdfs = collect_pdfs(floor_folder, output_name)
     if not pdfs:
-        raise FileNotFoundError(f"Нет PDF файлов в {floor_folder}")
+        raise FileNotFoundError(f"No PDF files in {floor_folder}")
     calc_names = [calc_name_from_file(p) for p in pdfs]
 
     print(f"\n{'═'*60}")
-    print(f"  📐  Проект  : {project_num} — {project_name}")
-    print(f"  📍  Отметка : {floor_name}")
-    print(f"  🏭  Завод   : {factory['name']}")
-    print(f"  👷  Инженер : {engineer}")
-    print(f"  📄  Файлов  : {len(pdfs)}")
+    print(f"  📐  Project : {project_num} — {project_name}")
+    print(f"  📍  Floor   : {floor_name}")
+    print(f"  🏭  Factory : {factory['name']}")
+    print(f"  👷  Engineer: {engineer}")
+    print(f"  📄  Files   : {len(pdfs)}")
     print(f"{'═'*60}\n")
 
     readers, pages_per = [], []
@@ -671,14 +668,14 @@ def build_report(project_folder, floor_folder, factory_key, engineer=None, outpu
                 r = PdfReader(str(p))
             readers.append(r); pages_per.append(len(r.pages))
         except Exception as e:
-            raise RuntimeError(f"Ошибка чтения {p.name}: {e}") from e
+            raise RuntimeError(f"Error reading {p.name}: {e}") from e
 
     if HAS_ANNOTATE and not no_annotate:
-        print(f"  📝  Аннотации Loading: {annotated_count}/{len(pdfs)} файлов")
+        print(f"  📝  Loading annotations: {annotated_count}/{len(pdfs)} files")
 
     calc_start = []
     # First pass: generate title to know how many title pages there are
-    print("  ⚙️   Титульная страница…")
+    print("  ⚙️   Title page…")
     # Generate legend page
     legend_bytes = make_legend_page(calc_names, factory_cfg=factory)
     legend_reader = PdfReader(io.BytesIO(legend_bytes))
@@ -704,17 +701,17 @@ def build_report(project_folder, floor_folder, factory_key, engineer=None, outpu
         title_bytes, toc_regions = make_title_page(
             project_num, project_name, floor_name, factory, calc_names, calc_start, engineer)
         title_reader = PdfReader(io.BytesIO(title_bytes))
-        print(f"  📄  Титул: {n_title_pages} стр. + легенда: {n_legend_pages} стр.")
+        print(f"  📄  Title: {n_title_pages} p. + legend: {n_legend_pages} p.")
     else:
         calc_start = tmp_start
 
     total_pages = n_front_pages + sum(pages_per)
 
-    print(f"  {'Файл':45s}  {'Стр':>4}  {'Начало':>6}")
+    print(f"  {'File':45s}  {'Pgs':>4}  {'Start':>6}")
     print(f"  {'─'*45}  {'─'*4}  {'─'*6}")
     for name, n, s in zip(calc_names, pages_per, calc_start):
-        print(f"  {name:45s}  {n:4d}  стр.{s}")
-    print(f"\n  Итого: {total_pages} стр.\n")
+        print(f"  {name:45s}  {n:4d}  p.{s}")
+    print(f"\n  Total: {total_pages} pages\n")
 
     writer = PdfWriter()
     # Add all title pages
@@ -730,14 +727,14 @@ def build_report(project_folder, floor_folder, factory_key, engineer=None, outpu
     assert len(writer.pages) == total_pages
 
     if not no_nums:
-        print(f"  ⚙️   Нумерация ({total_pages} стр.)…")
+        print(f"  ⚙️   Page numbers ({total_pages} p.)…")
         num_bytes, toc_back_regions = make_page_numbers(
             total_pages, skip_first=True, n_front_pages=n_front_pages)
         num_reader = PdfReader(io.BytesIO(num_bytes))
         for i in range(total_pages):
             writer.pages[i].merge_page(num_reader.pages[i])
 
-    print("  ⚙️   Ссылки и закладки…")
+    print("  ⚙️   Links & bookmarks…")
     # Add clickable links on each title page (TOC → calc page)
     for region in toc_regions:
         toc_pg = region.get("toc_page", 0)
@@ -787,7 +784,7 @@ def build_report(project_folder, floor_folder, factory_key, engineer=None, outpu
     with open(output_path, "wb") as f:
         writer.write(f)
     size_kb = output_path.stat().st_size // 1024
-    print(f"\n  🎉  Готово!  {total_pages} стр. → {output_path}  ({size_kb} KB)\n")
+    print(f"\n  🎉  Done!  {total_pages} pages → {output_path}  ({size_kb} KB)\n")
     return output_path
 
 
@@ -796,54 +793,52 @@ def build_report(project_folder, floor_folder, factory_key, engineer=None, outpu
 # ═════════════════════════════════════════════════════════════════════════════
 def main():
     p = argparse.ArgumentParser(
-        description="Генератор PDF-отчётов — ARME Engineers",
+        description="PDF Report Generator — ARME Engineers",
         formatter_class=argparse.RawDescriptionHelpFormatter, epilog=__doc__)
-    p.add_argument("project", nargs="?", help="Номер проекта (1382, 26-09, …)")
-    p.add_argument("--floor",    "-f", help="Отметка (имя подпапки)")
-    p.add_argument("--factory",  "-F", help="Ключ завода (авто если не указан)")
-    p.add_argument("--engineer", "-e", help=f"Инженер (по умолч. {cfg.DEFAULT_ENGINEER})")
-    p.add_argument("--output",   "-o", help="Имя результата")
+    p.add_argument("project", nargs="?", help="Project number (1382, 26-09, …)")
+    p.add_argument("--floor",    "-f", help="Floor (subfolder name)")
+    p.add_argument("--factory",  "-F", help="Factory key (auto if omitted)")
+    p.add_argument("--engineer", "-e", help=f"Engineer (default {cfg.DEFAULT_ENGINEER})")
+    p.add_argument("--output",   "-o", help="Output filename")
     p.add_argument("--no-page-numbers", action="store_true")
-    p.add_argument("--no-annotate", action="store_true", help="Без аннотаций Loading")
-    p.add_argument("--all-floors", action="store_true", help="Собрать отчёт для каждой отметки")
+    p.add_argument("--no-annotate", action="store_true", help="Skip Loading annotations")
+    p.add_argument("--all-floors", action="store_true", help="Build report for every floor")
     args = p.parse_args()
 
-    # ── Выбор проекта ────────────────────────────────────────────────────
+    # ── Project selection ────────────────────────────────────────────────
     if not args.project:
         list_projects()
-        args.project = input("\n  Номер проекта: ").strip()
+        args.project = input("\n  Project number: ").strip()
         if not args.project:
-            p.error("Укажи номер проекта")
+            p.error("Project number is required")
 
     project_folder = find_project_folder(args.project)
     if not project_folder:
-        print(f"❌  Проект «{args.project}» не найден в {PROJECTS_ROOT}")
+        print(f"❌  Project «{args.project}» not found in {PROJECTS_ROOT}")
         list_projects()
         sys.exit(1)
 
     project_num, project_name = parse_project_folder(project_folder)
     print(f"\n  📂  {project_folder.name}")
 
-    # ── Автодетект завода ─────────────────────────────────────────────────
+    # ── Factory auto-detect ──────────────────────────────────────────────
     if not args.factory:
         args.factory = cfg.detect_factory(project_num)
         if args.factory:
-            print(f"  🏭  Завод: {args.factory} ({cfg.FACTORIES[args.factory]['name']})")
+            print(f"  🏭  Factory: {args.factory} ({cfg.FACTORIES[args.factory]['name']})")
         else:
-            print("  Доступные заводы:")
+            print("  Available factories:")
             for k, v in cfg.FACTORIES.items():
                 print(f"    {k:12s}  {v['name']}")
-            args.factory = input("  Завод: ").strip()
+            args.factory = input("  Factory: ").strip()
             if not args.factory:
-                p.error("Завод обязателен")
+                p.error("Factory is required")
 
-    # ── Выбор отметки ────────────────────────────────────────────────────
+    # ── Floor selection ──────────────────────────────────────────────────
     floors = list_floors(project_folder)
 
     if floors:
-        # Есть подпапки = отметки
         if args.all_floors:
-            # Собираем для каждой отметки
             for ff in floors:
                 pdfs = collect_pdfs(ff)
                 if pdfs:
@@ -851,27 +846,26 @@ def main():
                                  args.output, args.no_page_numbers,
                                  no_annotate=args.no_annotate)
                 else:
-                    print(f"  ⚠️  Нет PDF в {ff.name}, пропуск")
+                    print(f"  ⚠️  No PDF in {ff.name}, skipping")
             return
 
         if args.floor:
-            # Ищем подпапку по имени
             match = [f for f in floors if f.name == args.floor]
             if not match:
                 match = [f for f in floors if args.floor in f.name]
             if match:
                 floor_folder = match[0]
             else:
-                print(f"  ❌  Отметка «{args.floor}» не найдена")
-                print(f"  Доступные: {', '.join(f.name for f in floors)}")
+                print(f"  ❌  Floor «{args.floor}» not found")
+                print(f"  Available: {', '.join(f.name for f in floors)}")
                 sys.exit(1)
         else:
-            print(f"\n  Отметки:")
+            print(f"\n  Floors:")
             for i, f in enumerate(floors, 1):
                 n_pdfs = len(collect_pdfs(f))
                 print(f"    {i}. {f.name:15s}  ({n_pdfs} PDF)")
-            print(f"    *  Все отметки")
-            choice = input(f"\n  Выбери (1-{len(floors)} или *): ").strip()
+            print(f"    *  All floors")
+            choice = input(f"\n  Choose (1-{len(floors)} or *): ").strip()
             if choice == '*':
                 for ff in floors:
                     pdfs = collect_pdfs(ff)
@@ -883,14 +877,13 @@ def main():
             try:
                 floor_folder = floors[int(choice)-1]
             except (ValueError, IndexError):
-                print("❌  Неверный выбор"); sys.exit(1)
+                print("❌  Invalid choice"); sys.exit(1)
     else:
-        # PDF лежат прямо в папке проекта (нет подпапок)
         floor_folder = project_folder
         if not args.floor:
-            args.floor = input("  Отметка / этаж: ").strip()
+            args.floor = input("  Floor / level: ").strip()
             if not args.floor:
-                p.error("Отметка обязательна")
+                p.error("Floor is required")
 
     build_report(project_folder, floor_folder, args.factory, args.engineer,
                  args.output, args.no_page_numbers,
