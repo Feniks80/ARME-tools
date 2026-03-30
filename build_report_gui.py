@@ -1,14 +1,15 @@
 """
-Build Report — GUI
+Build Report — GUI | ARME Engineers
+trom@arme.co.il | Shimon Donen
+
 Графический интерфейс для генерации PDF-отчётов преднапряжённых плит.
 
 Requires: build_report.py, config.py, annotate_loading.py in the same folder.
-Organization: ARME Engineers | Shimon Donen
 
 Metadata embedded in generated PDFs:
     /Author   : ARME ENGINEERS / <engineer_name>
     /Creator  : build_report.py — ARME Engineers (<factory-specific email>)
-    /Producer : ARME Engineers Build Report Generator v2.0
+    /Producer : ARME Engineers Build Report Generator v2.1
 """
 
 import tkinter as tk
@@ -86,7 +87,7 @@ C_WARNING   = "#f38ba8"
 C_ORANGE    = "#fab387"
 
 # ── App metadata ──────────────────────────────────────────────────────────────
-APP_VERSION  = "2.0"
+APP_VERSION  = "2.1"
 APP_ORG      = "ARME Engineers"
 APP_EMAIL    = "trom@arme.co.il"   # UI default; per-factory email handled by config.get_email()
 APP_ENGINEER = "שמעון דונן"

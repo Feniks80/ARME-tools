@@ -1,0 +1,1 @@
+cd p:\claude\projects\arme_tools && rmdir /s /q build dist && del ARME_BuildReport.spec && pyinstaller --onefile --windowed --add-data "build_report.py;." --add-data "annotate_loading.py;." --add-data "config.py;." --add-data "pret_loads.py;." --add-data "logos;logos" --name "ARME_BuildReport" build_report_gui.py

@@ -261,7 +261,7 @@ def make_title_page(project_num, project_name, floor, factory_cfg,
         ("שם תוכנית", f"מפלס {floor}"),
         ("חישובים", factory_cfg.get("calc_type", "")),
         ("תכנן", engineer),
-        ("דוא\"ל", getattr(cfg, 'DEFAULT_EMAIL', '')),
+        ("דוא\"ל", factory_cfg.get("email", getattr(cfg, 'DEFAULT_EMAIL', ''))),
     ]
     for i, (label, value) in enumerate(meta_items):
         y = meta_y - i * line_h
@@ -776,7 +776,7 @@ def build_report(project_folder, floor_folder, factory_key, engineer=None, outpu
         "/Title": f"{project_num} - {project_name} - {floor_name}",
         "/Author": f"{cfg.ORG_NAME} / {engineer}",
         "/Subject": factory['name'],
-        "/Creator": f"build_report.py — {cfg.ORG_NAME} ({getattr(cfg, 'DEFAULT_EMAIL', '')})",
+        "/Creator": f"build_report.py — {cfg.ORG_NAME} ({factory.get('email', getattr(cfg, 'DEFAULT_EMAIL', ''))})",
         "/Producer": f"{cfg.ORG_NAME} Build Report Generator v2.1",
     })
 

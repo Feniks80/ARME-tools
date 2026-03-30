@@ -1,5 +1,8 @@
 """
-annotate_loading.py — auto-annotations for Loading page in PRET PDF calcs
+annotate_loading.py — ARME Engineers | Loading Page Annotator
+trom@arme.co.il | Shimon Donen
+
+Auto-annotations for Loading page in PRET PDF calcs.
 
 For each PDF file:
 1. Parse filename → nn, h, L, ST, DL, LL
