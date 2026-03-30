@@ -1,12 +1,20 @@
 #!/usr/bin/env python3
 """
-build_report.py — генератор PDF-отчётов для расчётов преднапряжённых плит.
+build_report.py — ARME Engineers | PDF Report Generator
+trom@arme.co.il | Shimon Donen
+
+Генератор PDF-отчётов для расчётов преднапряжённых плит.
 
 Запуск:
   python build_report.py 1382                     # → интерактивный выбор отметки
   python build_report.py 1382 --floor "+14"        # → конкретная отметка
   python build_report.py 26-09 --floor "+14"       # → Haifa проект
   python build_report.py                           # → список всех проектов
+
+Metadata embedded in generated PDFs:
+    /Author   : ARME ENGINEERS / <engineer_name>
+    /Creator  : build_report.py — ARME Engineers (trom@arme.co.il)
+    /Producer : ARME Engineers Build Report Generator v2.1
 """
 
 import argparse, io, os, sys, re, unicodedata
@@ -39,7 +47,7 @@ sys.path.insert(0, str(SCRIPT_DIR))
 try:
     import config as cfg
 except ImportError:
-    print("❌  config.py не найден рядом со скриптом"); sys.exit(1)
+    print("❌  config.py not found next to script"); sys.exit(1)
 
 LOGOS_DIR = SCRIPT_DIR / "logos"
 PROJECTS_ROOT = Path(getattr(cfg, 'PROJECTS_ROOT', SCRIPT_DIR))
@@ -49,7 +57,7 @@ try:
     from annotate_loading import annotate_pdf_loading
     HAS_ANNOTATE = True
 except ImportError:
-    print("⚠️  annotate_loading.py не найден — аннотации Loading будут пропущены")
+    print("⚠️  annotate_loading.py not found — Loading annotations will be skipped")
     HAS_ANNOTATE = False
 
 # ── Bidi ─────────────────────────────────────────────────────────────────────
@@ -58,7 +66,7 @@ try:
     def heb(text):
         return get_display(str(text))
 except ImportError:
-    print("⚠️   python-bidi не установлен — иврит может отображаться зеркально.")
+    print("⚠️   python-bidi not installed — Hebrew may appear mirrored.")
     print("    pip install python-bidi")
     def heb(text):
         # Простой fallback: переворачиваем RTL runs
@@ -124,52 +132,49 @@ def parse_project_folder(folder_path):
     return "", name
 
 def find_project_folder(project_id):
-    """Находит папку проекта по номеру (начало имени)."""
+    """Find project folder by number (start of name)."""
     if not PROJECTS_ROOT.exists():
-        print(f"❌  Папка проектов не найдена: {PROJECTS_ROOT}")
+        print(f"❌  Projects folder not found: {PROJECTS_ROOT}")
         sys.exit(1)
     matches = []
     for d in PROJECTS_ROOT.iterdir():
         if d.is_dir() and d.name.startswith(project_id):
-            # проверяем что после номера идёт " - " или конец
             rest = d.name[len(project_id):]
             if not rest or rest.startswith(" -") or rest.startswith("-"):
                 matches.append(d)
     if len(matches) == 1:
         return matches[0]
     if len(matches) > 1:
-        print(f"\n  Найдено несколько проектов с номером {project_id}:")
+        print(f"\n  Multiple projects found for {project_id}:")
         for i, m in enumerate(matches, 1):
             print(f"    {i}. {m.name}")
-        choice = input(f"  Выбери (1-{len(matches)}): ").strip()
+        choice = input(f"  Choose (1-{len(matches)}): ").strip()
         try:
             return matches[int(choice)-1]
         except (ValueError, IndexError):
-            print("❌  Неверный выбор"); sys.exit(1)
+            print("❌  Invalid choice"); sys.exit(1)
     return None
 
 def list_projects():
-    """Выводит список всех проектов."""
+    """List all projects."""
     if not PROJECTS_ROOT.exists():
-        print(f"❌  Папка проектов не найдена: {PROJECTS_ROOT}")
+        print(f"❌  Projects folder not found: {PROJECTS_ROOT}")
         return
     dirs = sorted([d for d in PROJECTS_ROOT.iterdir() if d.is_dir()
                    and not d.name.startswith(('.', '_'))
                    and d.name != 'logos'])
     if not dirs:
-        print("  Нет папок проектов.")
+        print("  No project folders found.")
         return
-    print(f"\n  Проекты в {PROJECTS_ROOT}:\n")
+    print(f"\n  Projects in {PROJECTS_ROOT}:\n")
     for d in dirs:
         num, name = parse_project_folder(d)
         factory_key = cfg.detect_factory(num) if num else ""
         factory_name = cfg.FACTORIES.get(factory_key, {}).get('name', '?')
-        # count subfolders (floors)
         floors = [f for f in d.iterdir() if f.is_dir() and not f.name.startswith('.')]
-        # count pdfs directly
         pdfs = list(d.glob("*.pdf"))
         if floors:
-            print(f"    {num:10s}  {name:40s}  [{factory_name}]  {len(floors)} отметок")
+            print(f"    {num:10s}  {name:40s}  [{factory_name}]  {len(floors)} floors")
         elif pdfs:
             print(f"    {num:10s}  {name:40s}  [{factory_name}]  {len(pdfs)} PDF")
         else:
@@ -210,7 +215,7 @@ def date_he(d=None):
 #  ТИТУЛЬНАЯ СТРАНИЦА
 # ═════════════════════════════════════════════════════════════════════════════
 def make_title_page(project_num, project_name, floor, factory_cfg,
-                    calc_names, calc_start_pages, engineer, factory_key=""):
+                    calc_names, calc_start_pages, engineer):
     buf = io.BytesIO()
     W, H = A4
     c = rl_canvas.Canvas(buf, pagesize=A4)
@@ -256,7 +261,7 @@ def make_title_page(project_num, project_name, floor, factory_cfg,
         ("שם תוכנית", f"מפלס {floor}"),
         ("חישובים", factory_cfg.get("calc_type", "")),
         ("תכנן", engineer),
-        ("דוא\"ל", cfg.get_email(factory_key) if hasattr(cfg, 'get_email') else getattr(cfg, 'DEFAULT_EMAIL', '')),
+        ("דוא\"ל", getattr(cfg, 'DEFAULT_EMAIL', '')),
     ]
     for i, (label, value) in enumerate(meta_items):
         y = meta_y - i * line_h
@@ -562,16 +567,45 @@ def make_legend_page(calc_names, factory_cfg=None):
 # ═════════════════════════════════════════════════════════════════════════════
 #  НУМЕРАЦИЯ / ССЫЛКИ
 # ═════════════════════════════════════════════════════════════════════════════
-def make_page_numbers(total, skip_first=True):
+def make_page_numbers(total, skip_first=True, n_front_pages=1):
+    """
+    Генерирует overlay с номерами страниц и ссылкой «← תוכן» на содержание.
+    Возвращает (pdf_bytes, toc_back_regions) — регионы для кликабельных ссылок
+    на титульную страницу (содержание).
+
+    n_front_pages: количество вступительных страниц (титул + легенда),
+                   на которых НЕ рисуется ссылка «← תוכן».
+    """
     buf = io.BytesIO()
+    W, H = A4
     c = rl_canvas.Canvas(buf, pagesize=A4)
+    toc_back_regions = []
+    toc_label = heb("תוכן")  # «Содержание»
+    arrow = " \u2190 "       # ← стрелка
+
     for i in range(total):
         if not (skip_first and i == 0):
+            # — Номер страницы (по центру) —
             c.setFont(FN, 8); c.setFillColor(colors.HexColor("#888888"))
-            c.drawCentredString(A4[0]/2, 7*mm, f"{i+1} / {total}")
+            page_text = f"{i+1} / {total}"
+            c.drawCentredString(W/2, 7*mm, page_text)
+
+            # — Ссылка «← תוכן» справа от номера (только для страниц расчётов) —
+            if i >= n_front_pages:
+                page_w = c.stringWidth(page_text, FN, 8)
+                link_x = W/2 + page_w/2 + 6  # 6pt отступ от номера
+                link_text = arrow + toc_label
+                c.setFont(FN, 7); c.setFillColor(colors.HexColor("#5577AA"))
+                c.drawString(link_x, 7*mm, link_text)
+                link_w = c.stringWidth(link_text, FN, 7)
+                # Регион для кликабельной ссылки (rect: x0, y0, x1, y1)
+                toc_back_regions.append({
+                    "page_index": i,
+                    "rect": (link_x - 2, 5*mm, link_x + link_w + 2, 7*mm + 10),
+                })
         c.showPage()
     c.save()
-    return buf.getvalue()
+    return buf.getvalue(), toc_back_regions
 
 def add_toc_links(writer, page_index, toc_regions):
     page = writer.pages[page_index]
@@ -600,7 +634,7 @@ def build_report(project_folder, floor_folder, factory_key, engineer=None, outpu
         floor_name = floor_folder.name  # "+14", "גג", etc.
 
     if factory_key not in cfg.FACTORIES:
-        raise ValueError(f"Завод «{factory_key}» не найден")
+        raise ValueError(f"Factory «{factory_key}» not found")
     factory = cfg.FACTORIES[factory_key]
     engineer = engineer or cfg.DEFAULT_ENGINEER
     output_name = output or f"{project_num}_{floor_name}_Static_Calculations_Report.pdf"
@@ -608,15 +642,15 @@ def build_report(project_folder, floor_folder, factory_key, engineer=None, outpu
 
     pdfs = collect_pdfs(floor_folder, output_name)
     if not pdfs:
-        raise FileNotFoundError(f"Нет PDF файлов в {floor_folder}")
+        raise FileNotFoundError(f"No PDF files in {floor_folder}")
     calc_names = [calc_name_from_file(p) for p in pdfs]
 
     print(f"\n{'═'*60}")
-    print(f"  📐  Проект  : {project_num} — {project_name}")
-    print(f"  📍  Отметка : {floor_name}")
-    print(f"  🏭  Завод   : {factory['name']}")
-    print(f"  👷  Инженер : {engineer}")
-    print(f"  📄  Файлов  : {len(pdfs)}")
+    print(f"  📐  Project : {project_num} — {project_name}")
+    print(f"  📍  Floor   : {floor_name}")
+    print(f"  🏭  Factory : {factory['name']}")
+    print(f"  👷  Engineer: {engineer}")
+    print(f"  📄  Files   : {len(pdfs)}")
     print(f"{'═'*60}\n")
 
     readers, pages_per = [], []
@@ -634,14 +668,14 @@ def build_report(project_folder, floor_folder, factory_key, engineer=None, outpu
                 r = PdfReader(str(p))
             readers.append(r); pages_per.append(len(r.pages))
         except Exception as e:
-            raise RuntimeError(f"Ошибка чтения {p.name}: {e}") from e
+            raise RuntimeError(f"Error reading {p.name}: {e}") from e
 
     if HAS_ANNOTATE and not no_annotate:
-        print(f"  📝  Аннотации Loading: {annotated_count}/{len(pdfs)} файлов")
+        print(f"  📝  Loading annotations: {annotated_count}/{len(pdfs)} files")
 
     calc_start = []
     # First pass: generate title to know how many title pages there are
-    print("  ⚙️   Титульная страница…")
+    print("  ⚙️   Title page…")
     # Generate legend page
     legend_bytes = make_legend_page(calc_names, factory_cfg=factory)
     legend_reader = PdfReader(io.BytesIO(legend_bytes))
@@ -653,8 +687,7 @@ def build_report(project_folder, floor_folder, factory_key, engineer=None, outpu
         tmp_start.append(cur); cur += n
 
     title_bytes, toc_regions = make_title_page(
-        project_num, project_name, floor_name, factory, calc_names, tmp_start, engineer,
-        factory_key=factory_key)
+        project_num, project_name, floor_name, factory, calc_names, tmp_start, engineer)
     title_reader = PdfReader(io.BytesIO(title_bytes))
     n_title_pages = len(title_reader.pages)
 
@@ -666,20 +699,19 @@ def build_report(project_folder, floor_folder, factory_key, engineer=None, outpu
             calc_start.append(cur); cur += n
         # Regenerate title with correct page numbers
         title_bytes, toc_regions = make_title_page(
-            project_num, project_name, floor_name, factory, calc_names, calc_start, engineer,
-            factory_key=factory_key)
+            project_num, project_name, floor_name, factory, calc_names, calc_start, engineer)
         title_reader = PdfReader(io.BytesIO(title_bytes))
-        print(f"  📄  Титул: {n_title_pages} стр. + легенда: {n_legend_pages} стр.")
+        print(f"  📄  Title: {n_title_pages} p. + legend: {n_legend_pages} p.")
     else:
         calc_start = tmp_start
 
     total_pages = n_front_pages + sum(pages_per)
 
-    print(f"  {'Файл':45s}  {'Стр':>4}  {'Начало':>6}")
+    print(f"  {'File':45s}  {'Pgs':>4}  {'Start':>6}")
     print(f"  {'─'*45}  {'─'*4}  {'─'*6}")
     for name, n, s in zip(calc_names, pages_per, calc_start):
-        print(f"  {name:45s}  {n:4d}  стр.{s}")
-    print(f"\n  Итого: {total_pages} стр.\n")
+        print(f"  {name:45s}  {n:4d}  p.{s}")
+    print(f"\n  Total: {total_pages} pages\n")
 
     writer = PdfWriter()
     # Add all title pages
@@ -695,14 +727,15 @@ def build_report(project_folder, floor_folder, factory_key, engineer=None, outpu
     assert len(writer.pages) == total_pages
 
     if not no_nums:
-        print(f"  ⚙️   Нумерация ({total_pages} стр.)…")
-        num_bytes = make_page_numbers(total_pages, skip_first=True)
+        print(f"  ⚙️   Page numbers ({total_pages} p.)…")
+        num_bytes, toc_back_regions = make_page_numbers(
+            total_pages, skip_first=True, n_front_pages=n_front_pages)
         num_reader = PdfReader(io.BytesIO(num_bytes))
         for i in range(total_pages):
             writer.pages[i].merge_page(num_reader.pages[i])
 
-    print("  ⚙️   Ссылки и закладки…")
-    # Add clickable links on each title page
+    print("  ⚙️   Links & bookmarks…")
+    # Add clickable links on each title page (TOC → calc page)
     for region in toc_regions:
         toc_pg = region.get("toc_page", 0)
         tp = region["target_page"]
@@ -719,23 +752,39 @@ def build_report(project_folder, floor_folder, factory_key, engineer=None, outpu
         link[NameObject("/Dest")]    = ArrayObject([writer.pages[tp].indirect_reference, NameObject("/Fit")])
         page[NameObject("/Annots")].append(writer._add_object(link))
 
+    # Add clickable «← תוכן» links back to TOC (page 0) from each calc page
+    if not no_nums:
+        for region in toc_back_regions:
+            pg_idx = region["page_index"]
+            if pg_idx < 0 or pg_idx >= len(writer.pages): continue
+            page = writer.pages[pg_idx]
+            if "/Annots" not in page:
+                page[NameObject("/Annots")] = ArrayObject()
+            r = region["rect"]
+            link = DictionaryObject()
+            link[NameObject("/Type")]    = NameObject("/Annot")
+            link[NameObject("/Subtype")] = NameObject("/Link")
+            link[NameObject("/Rect")]    = ArrayObject([FloatObject(r[0]),FloatObject(r[1]),FloatObject(r[2]),FloatObject(r[3])])
+            link[NameObject("/Border")]  = ArrayObject([NumberObject(0),NumberObject(0),NumberObject(0)])
+            link[NameObject("/Dest")]    = ArrayObject([writer.pages[0].indirect_reference, NameObject("/Fit")])
+            page[NameObject("/Annots")].append(writer._add_object(link))
+
     for name, sp in zip(calc_names, calc_start):
         writer.add_outline_item(name, sp-1)
 
-    _email = cfg.get_email(factory_key) if hasattr(cfg, 'get_email') else getattr(cfg, 'DEFAULT_EMAIL', '')
     writer.add_metadata({
         "/Title": f"{project_num} - {project_name} - {floor_name}",
         "/Author": f"{cfg.ORG_NAME} / {engineer}",
         "/Subject": factory['name'],
-        "/Creator": f"build_report.py — {cfg.ORG_NAME} ({_email})",
-        "/Producer": f"{cfg.ORG_NAME} Build Report Generator v2.0",
+        "/Creator": f"build_report.py — {cfg.ORG_NAME} ({getattr(cfg, 'DEFAULT_EMAIL', '')})",
+        "/Producer": f"{cfg.ORG_NAME} Build Report Generator v2.1",
     })
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with open(output_path, "wb") as f:
         writer.write(f)
     size_kb = output_path.stat().st_size // 1024
-    print(f"\n  🎉  Готово!  {total_pages} стр. → {output_path}  ({size_kb} KB)\n")
+    print(f"\n  🎉  Done!  {total_pages} pages → {output_path}  ({size_kb} KB)\n")
     return output_path
 
 
@@ -744,54 +793,52 @@ def build_report(project_folder, floor_folder, factory_key, engineer=None, outpu
 # ═════════════════════════════════════════════════════════════════════════════
 def main():
     p = argparse.ArgumentParser(
-        description="Генератор PDF-отчётов — ARME Engineers",
+        description="PDF Report Generator — ARME Engineers",
         formatter_class=argparse.RawDescriptionHelpFormatter, epilog=__doc__)
-    p.add_argument("project", nargs="?", help="Номер проекта (1382, 26-09, …)")
-    p.add_argument("--floor",    "-f", help="Отметка (имя подпапки)")
-    p.add_argument("--factory",  "-F", help="Ключ завода (авто если не указан)")
-    p.add_argument("--engineer", "-e", help=f"Инженер (по умолч. {cfg.DEFAULT_ENGINEER})")
-    p.add_argument("--output",   "-o", help="Имя результата")
+    p.add_argument("project", nargs="?", help="Project number (1382, 26-09, …)")
+    p.add_argument("--floor",    "-f", help="Floor (subfolder name)")
+    p.add_argument("--factory",  "-F", help="Factory key (auto if omitted)")
+    p.add_argument("--engineer", "-e", help=f"Engineer (default {cfg.DEFAULT_ENGINEER})")
+    p.add_argument("--output",   "-o", help="Output filename")
     p.add_argument("--no-page-numbers", action="store_true")
-    p.add_argument("--no-annotate", action="store_true", help="Без аннотаций Loading")
-    p.add_argument("--all-floors", action="store_true", help="Собрать отчёт для каждой отметки")
+    p.add_argument("--no-annotate", action="store_true", help="Skip Loading annotations")
+    p.add_argument("--all-floors", action="store_true", help="Build report for every floor")
     args = p.parse_args()
 
-    # ── Выбор проекта ────────────────────────────────────────────────────
+    # ── Project selection ────────────────────────────────────────────────
     if not args.project:
         list_projects()
-        args.project = input("\n  Номер проекта: ").strip()
+        args.project = input("\n  Project number: ").strip()
         if not args.project:
-            p.error("Укажи номер проекта")
+            p.error("Project number is required")
 
     project_folder = find_project_folder(args.project)
     if not project_folder:
-        print(f"❌  Проект «{args.project}» не найден в {PROJECTS_ROOT}")
+        print(f"❌  Project «{args.project}» not found in {PROJECTS_ROOT}")
         list_projects()
         sys.exit(1)
 
     project_num, project_name = parse_project_folder(project_folder)
     print(f"\n  📂  {project_folder.name}")
 
-    # ── Автодетект завода ─────────────────────────────────────────────────
+    # ── Factory auto-detect ──────────────────────────────────────────────
     if not args.factory:
         args.factory = cfg.detect_factory(project_num)
         if args.factory:
-            print(f"  🏭  Завод: {args.factory} ({cfg.FACTORIES[args.factory]['name']})")
+            print(f"  🏭  Factory: {args.factory} ({cfg.FACTORIES[args.factory]['name']})")
         else:
-            print("  Доступные заводы:")
+            print("  Available factories:")
             for k, v in cfg.FACTORIES.items():
                 print(f"    {k:12s}  {v['name']}")
-            args.factory = input("  Завод: ").strip()
+            args.factory = input("  Factory: ").strip()
             if not args.factory:
-                p.error("Завод обязателен")
+                p.error("Factory is required")
 
-    # ── Выбор отметки ────────────────────────────────────────────────────
+    # ── Floor selection ──────────────────────────────────────────────────
     floors = list_floors(project_folder)
 
     if floors:
-        # Есть подпапки = отметки
         if args.all_floors:
-            # Собираем для каждой отметки
             for ff in floors:
                 pdfs = collect_pdfs(ff)
                 if pdfs:
@@ -799,27 +846,26 @@ def main():
                                  args.output, args.no_page_numbers,
                                  no_annotate=args.no_annotate)
                 else:
-                    print(f"  ⚠️  Нет PDF в {ff.name}, пропуск")
+                    print(f"  ⚠️  No PDF in {ff.name}, skipping")
             return
 
         if args.floor:
-            # Ищем подпапку по имени
             match = [f for f in floors if f.name == args.floor]
             if not match:
                 match = [f for f in floors if args.floor in f.name]
             if match:
                 floor_folder = match[0]
             else:
-                print(f"  ❌  Отметка «{args.floor}» не найдена")
-                print(f"  Доступные: {', '.join(f.name for f in floors)}")
+                print(f"  ❌  Floor «{args.floor}» not found")
+                print(f"  Available: {', '.join(f.name for f in floors)}")
                 sys.exit(1)
         else:
-            print(f"\n  Отметки:")
+            print(f"\n  Floors:")
             for i, f in enumerate(floors, 1):
                 n_pdfs = len(collect_pdfs(f))
                 print(f"    {i}. {f.name:15s}  ({n_pdfs} PDF)")
-            print(f"    *  Все отметки")
-            choice = input(f"\n  Выбери (1-{len(floors)} или *): ").strip()
+            print(f"    *  All floors")
+            choice = input(f"\n  Choose (1-{len(floors)} or *): ").strip()
             if choice == '*':
                 for ff in floors:
                     pdfs = collect_pdfs(ff)
@@ -831,14 +877,13 @@ def main():
             try:
                 floor_folder = floors[int(choice)-1]
             except (ValueError, IndexError):
-                print("❌  Неверный выбор"); sys.exit(1)
+                print("❌  Invalid choice"); sys.exit(1)
     else:
-        # PDF лежат прямо в папке проекта (нет подпапок)
         floor_folder = project_folder
         if not args.floor:
-            args.floor = input("  Отметка / этаж: ").strip()
+            args.floor = input("  Floor / level: ").strip()
             if not args.floor:
-                p.error("Отметка обязательна")
+                p.error("Floor is required")
 
     build_report(project_folder, floor_folder, args.factory, args.engineer,
                  args.output, args.no_page_numbers,
